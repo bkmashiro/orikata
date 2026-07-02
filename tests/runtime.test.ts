@@ -108,7 +108,7 @@ describe('interactive-bridge runtime', () => {
     const runtime = createOrigamiRuntime({ mode: 'interactive-bridge', host, sourceRoot, paper, foldOps, snapshotProvider: provider });
 
     await runtime.mount();
-    expect(runtime.bridgePointer?.({ clientX: 150, clientY: 50, type: 'pointerup' })).toBe(true);
+    expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointerup' })).toBe(true);
 
     expect(capture).toHaveBeenCalledTimes(1);
     expect(clicks).toBe(1);

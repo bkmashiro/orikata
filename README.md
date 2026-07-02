@@ -14,7 +14,7 @@ type OrigamiRuntimeMode = 'static-view' | 'interactive-bridge' | 'baked-view';
 - `interactive-bridge`：真实 DOM 保留一份，视觉层用 snapshot，点击通过 hit-test 映射回 source DOM。
 - `baked-view`：角度和折线固定，预先生成 manifest；运行时只挂载固定折片，不允许 `setAngle`，适合低算力展示、SSR/静态导出、批量列表卡片。
 
-当前实现是第二个几何地基版本：支持任意直线切 convex polygon、内部 `Mat4` 矩阵模型、CSS `matrix3d()` serializer、父子 fold world matrix 合成、基于变换后 polygon 的初版 hit-test。复杂凹多边形布尔切割、透视 ray-plane 反投影、input proxy、wheel/drag adapters 后续再补。
+当前实现是第二个几何地基版本：支持任意直线切 convex polygon、内部 `Mat4` 矩阵模型、CSS `matrix3d()` serializer、父子 fold world matrix 合成、基于变换后 polygon 的初版 hit-test，以及 KISS 版 projected-bounds source 坐标映射。复杂凹多边形布尔切割、透视 ray-plane 反投影、input proxy、wheel/drag adapters 后续再补。
 
 ## Install / dev
 

@@ -292,6 +292,28 @@ export function mat4ApplyPoint(matrix: Mat4, point: Point3): Point3 {
   return { x: x / (w || 1), y: y / (w || 1), z: z / (w || 1) };
 }
 
+export function mat4Invert(matrix: Mat4): Mat4 {
+  const r00 = matrix[0];
+  const r01 = matrix[1];
+  const r02 = matrix[2];
+  const r10 = matrix[4];
+  const r11 = matrix[5];
+  const r12 = matrix[6];
+  const r20 = matrix[8];
+  const r21 = matrix[9];
+  const r22 = matrix[10];
+  const tx = matrix[3];
+  const ty = matrix[7];
+  const tz = matrix[11];
+
+  return [
+    r00, r10, r20, -(r00 * tx + r10 * ty + r20 * tz),
+    r01, r11, r21, -(r01 * tx + r11 * ty + r21 * tz),
+    r02, r12, r22, -(r02 * tx + r12 * ty + r22 * tz),
+    0, 0, 0, 1
+  ].map((value) => Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(12))) as Mat4;
+}
+
 export function cssMatrixFromMat4(matrix: Mat4): string {
   const cssOrder = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
   return `matrix3d(${cssOrder.map((index) => formatCssNumber(matrix[index])).join(', ')})`;
@@ -401,11 +423,31 @@ function transformedPolygon(node: FoldNode): Polygon {
   });
 }
 
+function boundsOf(polygon: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {
+  return polygon.reduce((bounds, point) => ({
+    minX: Math.min(bounds.minX, point.x),
+    maxX: Math.max(bounds.maxX, point.x),
+    minY: Math.min(bounds.minY, point.y),
+    maxY: Math.max(bounds.maxY, point.y)
+  }), { minX: Number.POSITIVE_INFINITY, maxX: Number.NEGATIVE_INFINITY, minY: Number.POSITIVE_INFINITY, maxY: Number.NEGATIVE_INFINITY });
+}
+
+function mapProjectedPointToSource(point: Point2, node: FoldNode): Point2 {
+  const projectedBounds = boundsOf(transformedPolygon(node));
+  const sourceBounds = boundsOf(node.polygon);
+  const u = (point.x - projectedBounds.minX) / ((projectedBounds.maxX - projectedBounds.minX) || 1);
+  const v = (point.y - projectedBounds.minY) / ((projectedBounds.maxY - projectedBounds.minY) || 1);
+  return {
+    x: sourceBounds.minX + u * (sourceBounds.maxX - sourceBounds.minX),
+    y: sourceBounds.minY + v * (sourceBounds.maxY - sourceBounds.minY)
+  };
+}
+
 export function hitTestFoldTree(stagePoint: Point2, tree: DerivedFoldTree): FoldHit | null {
   for (const nodeId of [...tree.renderOrder].reverse()) {
     const node = tree.nodes[nodeId];
     if (pointInPolygon(stagePoint, transformedPolygon(node))) {
-      return { nodeId, localPoint: stagePoint };
+      return { nodeId, localPoint: mapProjectedPointToSource(stagePoint, node) };
     }
   }
   return null;

@@ -50,14 +50,13 @@ baked-view:
 1. fold split 支持任意直线切 convex polygon；凹多边形和多片拓扑暂未做完整布尔处理。
 2. `localMatrix/worldMatrix` 已升级为内部 `Mat4`，renderer 通过 `cssMatrixFromMat4()` 输出 `matrix3d()`。
 3. 多层 fold 会合成 parent world matrix 和 child local matrix。
-4. hit-test 会使用变换后的 polygon 轮廓，但仍是 2D projected polygon 命中，不是透视 ray-plane 反投影。
+4. hit-test 会使用变换后的 polygon 轮廓；命中后用 projected bounding box 映射回 source local point。这是 KISS 近似，足够支撑早期 click bridge。
 5. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
 6. input proxy / IME / selection / native select 暂未实现。
 
 ## Next slices
 
-1. 实现 ray-plane hit-test 和 node local -> source local 反投影。
-2. 增加 `InteractionAdapter` registry。
-3. 做 `InputProxyAdapter`，覆盖 input/textarea/range/checkbox。
-4. 增加 Playwright Chromium smoke；之后补 Safari/Firefox。
-5. 评估凹多边形/多片拓扑是否需要引入 polygon clipping dependency。
+1. 增加 `InteractionAdapter` registry，先只做 button/anchor/pointer 三个简单 adapter。
+2. 做最小 `InputProxyAdapter`，只覆盖 text input，IME/selection 先不承诺。
+3. 增加 Playwright Chromium smoke。
+4. 评估凹多边形/多片拓扑是否真的需要；没需求前不要引入复杂 dependency。
