@@ -35,6 +35,20 @@ const nameInputElement = nameInput;
 const copyInstallButton = copyInstall;
 const installCommandElement = installCommand;
 
+const SNAPSHOT_SCALE = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
+
+function scaleSvgIntrinsicSize(svg: string, width: number, height: number): string {
+  if (SNAPSHOT_SCALE <= 1) return svg;
+  return svg.replace(
+    /<svg\b([^>]*)\bwidth="[^"]+"\s+height="[^"]+"/,
+    `<svg$1width="${Math.round(width * SNAPSHOT_SCALE)}" height="${Math.round(height * SNAPSHOT_SCALE)}"`
+  );
+}
+
+function svgDataUrl(svg: string, width: number, height: number): string {
+  return `data:image/svg+xml,${encodeURIComponent(scaleSvgIntrinsicSize(svg, width, height))}`;
+}
+
 copyInstallButton.addEventListener('click', async () => {
   const command = installCommandElement.textContent?.trim() || 'npm install orikata';
   try {
@@ -276,11 +290,11 @@ const snapshot = {
   id: 'washi-asanoha-card',
   width: 420,
   height: 220,
-  url: `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || 'Save'))}`
+  url: svgDataUrl(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || 'Save'), 420, 220)
 };
 
 function refreshSnapshotTexture(): void {
-  snapshot.url = `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || 'Save'))}`;
+  snapshot.url = svgDataUrl(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || 'Save'), 420, 220);
   runtime.setAngles?.([
     { opId: 'quarter-fold-1', angleDeg: foldAngles['quarter-fold-1'] },
     { opId: 'quarter-fold-2', angleDeg: foldAngles['quarter-fold-2'] },
@@ -288,10 +302,6 @@ function refreshSnapshotTexture(): void {
   ]);
 }
 
-
-function svgDataUrl(svg: string): string {
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
 
 function buildSquareCollapseSvg(): string {
   return `
@@ -390,7 +400,7 @@ async function mountStaticShowcases(): Promise<void> {
     mode: 'static-view',
     host: squareFoldTargetElement,
     paper: { width: 260, height: 260 },
-    snapshot: { id: 'square-collapse', width: 260, height: 260, url: svgDataUrl(buildSquareCollapseSvg()) },
+    snapshot: { id: 'square-collapse', width: 260, height: 260, url: svgDataUrl(buildSquareCollapseSvg(), 260, 260) },
     foldOps: [
       { id: 'corner-tl', targetNodeId: ROOT_ID, childNodeId: 'corner-tl-panel', line: { a: { x: -10, y: 80 }, b: { x: 80, y: -10 } }, movingSide: 1, angleDeg: 58 },
       { id: 'corner-tr', targetNodeId: ROOT_ID, childNodeId: 'corner-tr-panel', line: { a: { x: 180, y: -10 }, b: { x: 270, y: 80 } }, movingSide: 1, angleDeg: 58 },
@@ -406,7 +416,7 @@ async function mountStaticShowcases(): Promise<void> {
     mode: 'static-view',
     host: complexDomTargetElement,
     paper: { width: 340, height: 220 },
-    snapshot: { id: 'complex-dom-graphic', width: 340, height: 220, url: svgDataUrl(buildComplexDomSvg()) },
+    snapshot: { id: 'complex-dom-graphic', width: 340, height: 220, url: svgDataUrl(buildComplexDomSvg(), 340, 220) },
     foldOps: [
       { id: 'complex-left-fold', targetNodeId: ROOT_ID, childNodeId: 'complex-mid-panel', line: { a: { x: 113, y: 0 }, b: { x: 113, y: 220 } }, movingSide: 1, angleDeg: -34 },
       { id: 'complex-right-fold', targetNodeId: 'complex-mid-panel', childNodeId: 'complex-right-panel', line: { a: { x: 227, y: 0 }, b: { x: 227, y: 220 } }, movingSide: 1, angleDeg: 38 }
@@ -508,7 +518,7 @@ async function mountFoldedCodeExamples(): Promise<void> {
       id: `code-example-${mode}-${index}`,
       width: 248,
       height: 148,
-      url: `data:image/svg+xml,${encodeURIComponent(buildCodeSnapshotSvg(code, mode, status))}`
+      url: svgDataUrl(buildCodeSnapshotSvg(code, mode, status), 248, 148)
     });
 
     if (mode === 'interactive') {
