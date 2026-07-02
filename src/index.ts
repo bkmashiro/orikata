@@ -695,11 +695,12 @@ export class TextInputProxyAdapter implements InteractionAdapter {
     proxy.removeAttribute('id');
     proxy.classList.add('ori-input-proxy');
     proxy.value = sourceInput.value;
+    const localBox = readLocalBox(sourceInput);
     proxy.style.position = 'absolute';
-    proxy.style.left = sourceInput.style.left || '0px';
-    proxy.style.top = sourceInput.style.top || '0px';
-    proxy.style.width = sourceInput.style.width || `${sourceInput.getBoundingClientRect().width}px`;
-    proxy.style.height = sourceInput.style.height || `${sourceInput.getBoundingClientRect().height}px`;
+    proxy.style.left = `${localBox?.x ?? 0}px`;
+    proxy.style.top = `${localBox?.y ?? 0}px`;
+    proxy.style.width = `${localBox?.width ?? sourceInput.getBoundingClientRect().width}px`;
+    proxy.style.height = `${localBox?.height ?? sourceInput.getBoundingClientRect().height}px`;
     proxy.style.pointerEvents = 'auto';
 
     activationLayer.replaceChildren(proxy);

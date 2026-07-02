@@ -4,8 +4,7 @@ const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
 const saveBtn = document.querySelector<HTMLButtonElement>('#saveBtn');
 const nameInput = document.querySelector<HTMLInputElement>('#nameInput');
-const clickCount = document.querySelector<HTMLElement>('#clickCount');
-const sourceValue = document.querySelector<HTMLElement>('#sourceValue');
+const saveFeedback = document.querySelector<HTMLElement>('#saveFeedback');
 const foldStage = document.querySelector<HTMLElement>('#foldStage');
 const activeFoldName = document.querySelector<HTMLElement>('#activeFoldName');
 const angleValue = document.querySelector<HTMLElement>('#angleValue');
@@ -13,7 +12,7 @@ const angleDial = document.querySelector<HTMLElement>('#angleDial');
 const angleHand = document.querySelector<HTMLElement>('#angleHand');
 const creaseTools = document.querySelector<HTMLElement>('#creaseTools');
 
-if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !saveFeedback || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error('Demo DOM is missing required elements');
 }
 
@@ -25,13 +24,26 @@ const angleHandElement = angleHand;
 const creaseToolHost = creaseTools;
 const targetElement = target;
 
-let clicks = 0;
+let feedbackTimer: number | undefined;
 saveBtn.addEventListener('click', () => {
-  clicks += 1;
-  clickCount.textContent = String(clicks);
+  window.clearTimeout(feedbackTimer);
+  const baseAngle = foldAngles['corner-mountain'];
+  saveBtn.textContent = 'Saved';
+  saveFeedback.textContent = 'saved — flap responds';
+  stageElement.dataset.feedback = 'saved';
+  runtime?.setAngle('corner-mountain', Math.min(72, baseAngle + 10));
+  renderCreaseTools();
+
+  feedbackTimer = window.setTimeout(() => {
+    runtime?.setAngle('corner-mountain', baseAngle);
+    renderCreaseTools();
+    saveBtn.textContent = 'Save';
+    saveFeedback.textContent = '';
+    delete stageElement.dataset.feedback;
+  }, 620);
 });
 nameInput.addEventListener('input', () => {
-  sourceValue.textContent = nameInput.value;
+  targetElement.dataset.inputValue = nameInput.value;
 });
 
 const foldOps = [

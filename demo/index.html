@@ -298,8 +298,9 @@
         align-items: center;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 12px 18px;
+        gap: 10px 14px;
         margin-top: 14px;
+        min-height: 38px;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       #toggle {
@@ -311,8 +312,26 @@
         background: transparent;
         cursor: pointer;
       }
-      .status { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
-      .status strong { color: var(--ink); font-weight: 600; }
+      .feedback {
+        min-width: 126px;
+        color: var(--vermilion);
+        font-size: 12px;
+        letter-spacing: .06em;
+        opacity: 0;
+        transform: translateY(3px);
+        transition: opacity .18s ease, transform .18s ease;
+      }
+      .stage[data-feedback="saved"] .feedback {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .stage[data-feedback="saved"] #target {
+        animation: target-breathe .62s ease;
+      }
+      @keyframes target-breathe {
+        0%, 100% { filter: none; }
+        35% { filter: drop-shadow(0 12px 24px rgba(182, 95, 69, .18)); }
+      }
       .caption {
         max-width: 580px;
         margin: 22px auto 0;
@@ -393,10 +412,7 @@
               </div>
               <div class="controls">
                 <button id="toggle">open / fold</button>
-                <div class="status">
-                  <span>clicks <strong id="clickCount">0</strong></span>
-                  <span>value <strong id="sourceValue">Aoi</strong></span>
-                </div>
+                <span id="saveFeedback" class="feedback" aria-live="polite"></span>
               </div>
             </div>
             <p class="caption">Step 1 is a flat center pre-crease; step 2 folds a local corner flap on the already-defined right panel. The sheet should read as one continuous piece of paper, not two sliced halves.</p>

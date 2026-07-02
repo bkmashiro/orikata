@@ -402,11 +402,12 @@ var TextInputProxyAdapter = class {
     proxy.removeAttribute("id");
     proxy.classList.add("ori-input-proxy");
     proxy.value = sourceInput.value;
+    const localBox = readLocalBox(sourceInput);
     proxy.style.position = "absolute";
-    proxy.style.left = sourceInput.style.left || "0px";
-    proxy.style.top = sourceInput.style.top || "0px";
-    proxy.style.width = sourceInput.style.width || `${sourceInput.getBoundingClientRect().width}px`;
-    proxy.style.height = sourceInput.style.height || `${sourceInput.getBoundingClientRect().height}px`;
+    proxy.style.left = `${localBox?.x ?? 0}px`;
+    proxy.style.top = `${localBox?.y ?? 0}px`;
+    proxy.style.width = `${localBox?.width ?? sourceInput.getBoundingClientRect().width}px`;
+    proxy.style.height = `${localBox?.height ?? sourceInput.getBoundingClientRect().height}px`;
     proxy.style.pointerEvents = "auto";
     activationLayer.replaceChildren(proxy);
     const sync = () => {
@@ -611,15 +612,14 @@ var target = document.querySelector("#target");
 var button = document.querySelector("#toggle");
 var saveBtn = document.querySelector("#saveBtn");
 var nameInput = document.querySelector("#nameInput");
-var clickCount = document.querySelector("#clickCount");
-var sourceValue = document.querySelector("#sourceValue");
+var saveFeedback = document.querySelector("#saveFeedback");
 var foldStage = document.querySelector("#foldStage");
 var activeFoldName = document.querySelector("#activeFoldName");
 var angleValue = document.querySelector("#angleValue");
 var angleDial = document.querySelector("#angleDial");
 var angleHand = document.querySelector("#angleHand");
 var creaseTools = document.querySelector("#creaseTools");
-if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !saveFeedback || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error("Demo DOM is missing required elements");
 }
 var stageElement = foldStage;
@@ -629,13 +629,25 @@ var angleDialElement = angleDial;
 var angleHandElement = angleHand;
 var creaseToolHost = creaseTools;
 var targetElement = target;
-var clicks = 0;
+var feedbackTimer;
 saveBtn.addEventListener("click", () => {
-  clicks += 1;
-  clickCount.textContent = String(clicks);
+  window.clearTimeout(feedbackTimer);
+  const baseAngle = foldAngles["corner-mountain"];
+  saveBtn.textContent = "Saved";
+  saveFeedback.textContent = "saved \u2014 flap responds";
+  stageElement.dataset.feedback = "saved";
+  runtime?.setAngle("corner-mountain", Math.min(72, baseAngle + 10));
+  renderCreaseTools();
+  feedbackTimer = window.setTimeout(() => {
+    runtime?.setAngle("corner-mountain", baseAngle);
+    renderCreaseTools();
+    saveBtn.textContent = "Save";
+    saveFeedback.textContent = "";
+    delete stageElement.dataset.feedback;
+  }, 620);
 });
 nameInput.addEventListener("input", () => {
-  sourceValue.textContent = nameInput.value;
+  targetElement.dataset.inputValue = nameInput.value;
 });
 var foldOps = [
   {

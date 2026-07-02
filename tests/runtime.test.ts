@@ -218,6 +218,8 @@ describe('interactive-bridge runtime', () => {
     const proxy = host.querySelector<HTMLInputElement>('.ori-input-proxy');
     expect(proxy).toBeInstanceOf(HTMLInputElement);
     expect(proxy?.value).toBe('Alice');
+    expect(proxy?.style.left).toBe('130px');
+    expect(proxy?.style.top).toBe('40px');
 
     proxy!.value = 'Bob';
     proxy!.dispatchEvent(new Event('input', { bubbles: true }));
