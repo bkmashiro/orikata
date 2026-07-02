@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 async function waitForIntro(page: import('@playwright/test').Page): Promise<void> {
   await expect(page.locator('#foldStage')).toHaveAttribute('data-tools-ready', 'true');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-center-angle', '0');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
 }
 
 test('install command copies and folded demo bridges button feedback and text input', async ({ page }) => {
@@ -25,11 +27,11 @@ test('install command copies and folded demo bridges button feedback and text in
   expect(decodeURIComponent(snapshotBackground)).toContain('>Aoi<');
   await expect(page.locator('#controlOverlay')).toHaveCount(0);
 
-  const initialFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
+  const initialQuarterTransform = await page.locator('[data-ori-node-id="right-quarter-panel"]').evaluate((node) => getComputedStyle(node).transform);
   await page.mouse.click(target!.x + 290, target!.y + 150);
   await expect.poll(async () => decodeURIComponent(await page.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage))).toContain('>Saved<');
-  const feedbackFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
-  expect(feedbackFlapTransform).toBe(initialFlapTransform);
+  const feedbackQuarterTransform = await page.locator('[data-ori-node-id="right-quarter-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(feedbackQuarterTransform).toBe(initialQuarterTransform);
 
   await page.mouse.click(target!.x + 290, target!.y + 97);
   const proxy = page.locator('.ori-input-proxy');
@@ -49,25 +51,26 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
   await page.goto('/demo/');
   await waitForIntro(page);
 
-  const corner = page.locator('[data-fold-candidate="corner-mountain"]');
-  await expect(corner).toBeAttached();
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-active-fold', 'corner-mountain');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-center-angle', '0');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-corner-angle', '48');
-  await expect(corner).toHaveAttribute('data-state', 'selected');
+  const third = page.locator('[data-fold-candidate="quarter-fold-3"]');
+  await expect(third).toBeAttached();
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-active-fold', 'quarter-fold-3');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
+  await expect(third).toHaveAttribute('data-state', 'selected');
 
-  const center = page.locator('[data-fold-candidate="center-valley"]');
-  await center.hover();
-  await expect(center).toHaveAttribute('data-state', 'hover');
-  await center.click();
-  await expect(page.locator('#activeFoldName')).toHaveText(/center valley/i);
-  await expect(center).toHaveAttribute('data-state', 'selected');
+  const second = page.locator('[data-fold-candidate="quarter-fold-2"]');
+  await second.dispatchEvent('mouseenter');
+  await expect(second).toHaveAttribute('data-state', 'hover');
+  await second.evaluate((node: HTMLElement) => node.click());
+  await expect(page.locator('#activeFoldName')).toHaveText(/quarter fold 2/i);
+  await expect(second).toHaveAttribute('data-state', 'selected');
 
   const dial = page.locator('#angleDial');
   await dial.click({ position: { x: 60, y: 33 } });
 
-  await expect(page.locator('#foldStage')).not.toHaveAttribute('data-center-angle', '0');
-  await expect(page.locator('#angleValue')).not.toHaveText('0°');
+  await expect(page.locator('#foldStage')).not.toHaveAttribute('data-fold2-angle', '-45');
+  await expect(page.locator('#angleValue')).not.toHaveText('-45°');
 });
 
 test('live mirror backend renders visual clones and syncs folded hover state', async ({ page }) => {
@@ -76,16 +79,18 @@ test('live mirror backend renders visual clones and syncs folded hover state', a
 
   const live = page.locator('#liveMirrorTarget');
   await expect(live).toHaveAttribute('data-live-mirror-ready', 'true');
-  await expect(live.locator('.ori-live-mirror')).toHaveCount(3);
+  await expect(live.locator('.ori-live-mirror')).toHaveCount(4);
   await expect(live.locator('#liveMirrorButton')).toHaveCount(1);
-  await expect(live.locator('[data-fold-original-id="liveMirrorButton"]')).toHaveCount(3);
+  await expect(live.locator('[data-fold-original-id="liveMirrorButton"]')).toHaveCount(4);
   await expect(live.locator('.ori-live-mirror').first()).toHaveCSS('pointer-events', 'none');
 
-  const livePanelTransform = await live.locator('[data-ori-node-id="live-right-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  const livePanelTransform = await live.locator('[data-ori-node-id="live-right-three-quarter-panel"]').evaluate((node) => getComputedStyle(node).transform);
   expect(livePanelTransform).not.toBe('none');
-  const liveLastPanelTransform = await live.locator('[data-ori-node-id="live-last-third-panel"]').evaluate((node) => getComputedStyle(node).transform);
-  expect(liveLastPanelTransform).not.toBe('none');
-  await expect(live.locator('[data-ori-node-id="live-last-third-panel"]')).toHaveAttribute('data-diagonal-panel-fold', 'true');
+  const liveHalfPanelTransform = await live.locator('[data-ori-node-id="live-right-half-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(liveHalfPanelTransform).not.toBe('none');
+  const liveQuarterPanelTransform = await live.locator('[data-ori-node-id="live-right-quarter-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(liveQuarterPanelTransform).not.toBe('none');
+  await expect(live.locator('[data-ori-node-id="live-last-third-panel"]')).toHaveCount(0);
   await expect(live.locator('[data-ori-node-id="live-button-flap"]')).toHaveCount(0);
 
   const box = await live.boundingBox();
@@ -165,13 +170,15 @@ test('crease guides are attached to folded facets instead of a flat global overl
   await page.goto('/demo/');
   await waitForIntro(page);
 
-  const centerLayer = page.locator('[data-tool-node="root"]');
-  const cornerLayer = page.locator('[data-tool-node="right-panel"]');
-  await expect(centerLayer).toHaveAttribute('data-tool-id', 'center-valley');
-  await expect(cornerLayer).toHaveAttribute('data-tool-id', 'corner-mountain');
+  const firstLayer = page.locator('[data-tool-node="root"]');
+  const secondLayer = page.locator('[data-tool-node="right-three-quarter-panel"]');
+  const thirdLayer = page.locator('[data-tool-node="right-half-panel"]');
+  await expect(firstLayer).toHaveAttribute('data-tool-id', 'quarter-fold-1');
+  await expect(secondLayer).toHaveAttribute('data-tool-id', 'quarter-fold-2');
+  await expect(thirdLayer).toHaveAttribute('data-tool-id', 'quarter-fold-3');
 
-  const rightPanelTransform = await page.locator('[data-ori-node-id="right-panel"]').evaluate((node) => getComputedStyle(node).transform);
-  const cornerGuideTransform = await cornerLayer.evaluate((node) => getComputedStyle(node).transform);
-  expect(cornerGuideTransform).toBe(rightPanelTransform);
-  expect(cornerGuideTransform).not.toBe('none');
+  const halfPanelTransform = await page.locator('[data-ori-node-id="right-half-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  const thirdGuideTransform = await thirdLayer.evaluate((node) => getComputedStyle(node).transform);
+  expect(thirdGuideTransform).toBe(halfPanelTransform);
+  expect(thirdGuideTransform).not.toBe('none');
 });

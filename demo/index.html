@@ -235,8 +235,9 @@
         pointer-events: auto;
         cursor: crosshair;
       }
-      .crease-hotspot.center { left: 206px; top: 8px; width: 8px; height: 204px; }
-      .crease-hotspot.corner { left: 294px; top: -4px; width: 150px; height: 18px; transform: rotate(33.7deg); transform-origin: 6px 9px; }
+      .crease-hotspot.quarter-fold-1 { left: 101px; top: 8px; width: 8px; height: 204px; }
+      .crease-hotspot.quarter-fold-2 { left: 206px; top: 8px; width: 8px; height: 204px; }
+      .crease-hotspot.quarter-fold-3 { left: 311px; top: 8px; width: 8px; height: 204px; }
       .crease-hotspot[data-state="hover"]::after,
       .crease-hotspot[data-state="selected"]::after {
         content: "";
@@ -665,14 +666,14 @@
           <div class="copy">
             <div class="eyebrow">folded DOM runtime</div>
             <h1>Orikata<span class="jp">折り方</span></h1>
-            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo keeps folded panels intact, then biases the rightmost panel inward along a diagonal so it reads as one continuous sheet.</p>
+            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo keeps the setup intentionally simple: three vertical creases at 1/4, 2/4, and 3/4 of the sheet.</p>
             <div class="install-wrap">
               <code class="install" id="installCommand">npm install orikata</code>
               <button class="copy-install" id="copyInstall" type="button" aria-label="copy install command">copy</button>
             </div>
           </div>
 
-          <section class="stage" id="foldStage" data-active-fold="corner-mountain" data-center-angle="-60" data-corner-angle="48" aria-label="Interactive Orikata demo">
+          <section class="stage" id="foldStage" data-active-fold="quarter-fold-3" data-fold1-angle="45" data-fold2-angle="-45" data-fold3-angle="45" aria-label="Interactive Orikata demo">
             <div class="fold-note"><strong>升箱の折り目</strong><span>hover a crease, click to rotate</span></div>
             <div class="demo-scale">
               <section id="target" aria-label="Folded patterned DOM demo">
@@ -687,17 +688,17 @@
               <div class="toolbox" aria-label="Fold editor controls">
                 <div>
                   <div class="tool-kicker">selected crease</div>
-                  <div class="tool-active"><span id="activeFoldName">corner mountain</span> <span class="angle-readout" id="angleValue">48°</span></div>
+                  <div class="tool-active"><span id="activeFoldName">quarter fold 3</span> <span class="angle-readout" id="angleValue">45°</span></div>
                 </div>
-                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="48" tabindex="0">
-                  <span id="angleHand" class="angle-hand" style="transform: rotate(48deg)"></span>
+                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="45" tabindex="0">
+                  <span id="angleHand" class="angle-hand" style="transform: rotate(45deg)"></span>
                 </div>
               </div>
               <div class="controls">
                 <button id="toggle">open / fold</button>
               </div>
             </div>
-            <p class="caption">Step 1 is a flat center pre-crease; step 2 folds the right side, and the rightmost third keeps its button intact while leaning inward on a diagonal. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
+            <p class="caption">The live mirror demo uses three plain vertical folds: +45° at 1/4, -45° at 2/4, and +45° at 3/4. No diagonal/button-specific cut is applied.</p>
           </section>
 
           <section class="live-spike" aria-label="Live mirror backend">

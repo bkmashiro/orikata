@@ -81,9 +81,9 @@ nameInputElement.addEventListener('input', () => {
 });
 
 const mainFoldPlan = createFoldPlan({ width: 420, height: 220 })
-  .preCrease('center-guide', { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } })
-  .foldRight({ id: 'center-valley', childId: 'right-panel', x: 210, angle: -60 })
-  .foldCorner({ id: 'corner-mountain', childId: 'upper-corner-flap', corner: 'top-right', target: 'right-panel', size: 120, angle: 48 });
+  .foldRight({ id: 'quarter-fold-1', childId: 'right-three-quarter-panel', x: 105, angle: 45 })
+  .foldRight({ id: 'quarter-fold-2', childId: 'right-half-panel', target: 'right-three-quarter-panel', x: 210, angle: -45 })
+  .foldRight({ id: 'quarter-fold-3', childId: 'right-quarter-panel', target: 'right-half-panel', x: 315, angle: 45 });
 
 const foldOps = mainFoldPlan.foldOps;
 const foldPlanInspection = inspectFoldPlan({ paper: { width: 420, height: 220 }, foldOps });
@@ -92,22 +92,25 @@ if (foldPlanInspection.warnings.length > 0) {
 }
 
 const foldAngles: Record<string, number> = {
-  'center-valley': -60,
-  'corner-mountain': 48
+  'quarter-fold-1': 45,
+  'quarter-fold-2': -45,
+  'quarter-fold-3': 45
 };
 const foldLabels: Record<string, string> = {
-  'center-valley': 'center valley',
-  'corner-mountain': 'corner mountain'
+  'quarter-fold-1': 'quarter fold 1',
+  'quarter-fold-2': 'quarter fold 2',
+  'quarter-fold-3': 'quarter fold 3'
 };
-let activeFoldId = 'corner-mountain';
+let activeFoldId = 'quarter-fold-3';
 
 function applyFoldAngle(id: string, angle: number): void {
   foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
   runtime?.setAngle(id, foldAngles[id]);
   renderCreaseTools();
   stageElement.dataset.activeFold = activeFoldId;
-  stageElement.dataset.centerAngle = String(foldAngles['center-valley']);
-  stageElement.dataset.cornerAngle = String(foldAngles['corner-mountain']);
+  stageElement.dataset.fold1Angle = String(foldAngles['quarter-fold-1']);
+  stageElement.dataset.fold2Angle = String(foldAngles['quarter-fold-2']);
+  stageElement.dataset.fold3Angle = String(foldAngles['quarter-fold-3']);
   angleValueElement.textContent = `${foldAngles[activeFoldId]}°`;
   angleDialElement.setAttribute('aria-valuenow', String(foldAngles[activeFoldId]));
   angleHandElement.style.transform = `rotate(${foldAngles[activeFoldId]}deg)`;
@@ -121,16 +124,22 @@ function setCandidateState(id: string, state: 'idle' | 'hover' | 'selected'): vo
 
 const creaseGuides = [
   {
-    id: 'center-valley',
+    id: 'quarter-fold-1',
     nodeId: ROOT_ID,
+    guide: { x1: 105, y1: 0, x2: 105, y2: 220 },
+    hot: { x1: 105, y1: 0, x2: 105, y2: 220 }
+  },
+  {
+    id: 'quarter-fold-2',
+    nodeId: 'right-three-quarter-panel',
     guide: { x1: 210, y1: 0, x2: 210, y2: 220 },
     hot: { x1: 210, y1: 0, x2: 210, y2: 220 }
   },
   {
-    id: 'corner-mountain',
-    nodeId: 'right-panel',
-    guide: { x1: 300, y1: 0, x2: 420, y2: 80 },
-    hot: { x1: 300, y1: 0, x2: 420, y2: 80 }
+    id: 'quarter-fold-3',
+    nodeId: 'right-half-panel',
+    guide: { x1: 315, y1: 0, x2: 315, y2: 220 },
+    hot: { x1: 315, y1: 0, x2: 315, y2: 220 }
   }
 ] as const;
 
@@ -157,7 +166,7 @@ function renderCreaseTools(): void {
 
     const hotspot = document.createElement('button');
     hotspot.type = 'button';
-    hotspot.className = `crease-hotspot ${guide.id === 'center-valley' ? 'center' : 'corner'}`;
+    hotspot.className = `crease-hotspot ${guide.id}`;
     hotspot.dataset.foldCandidate = guide.id;
     hotspot.dataset.state = guide.id === activeFoldId ? 'selected' : 'idle';
     hotspot.setAttribute('aria-label', `select ${foldLabels[guide.id]} crease`);
@@ -248,8 +257,7 @@ function buildSnapshotSvg(name: string, buttonLabel: string): string {
   <rect width="420" height="220" fill="#efe3cb"/>
   <rect width="420" height="220" fill="url(#asanoha)"/>
   <path d="M0 0h420v220H0z" fill="none" stroke="#2b2f2a" stroke-opacity="0.22"/>
-  <path d="M210 0v220" stroke="#2b2f2a" stroke-opacity="0.22" stroke-width="1.1" stroke-dasharray="6 8"/>
-  <path d="M300 0 420 80" stroke="#b65f45" stroke-opacity="0.5" stroke-width="1.2" stroke-dasharray="5 7"/>
+  <path d="M105 0v220M210 0v220M315 0v220" stroke="#2b2f2a" stroke-opacity="0.22" stroke-width="1.1" stroke-dasharray="6 8"/>
   <g filter="url(#bleed)">
     <circle cx="84" cy="86" r="40" fill="none" stroke="#1f2420" stroke-opacity="0.16" stroke-width="12"/>
     <text x="32" y="58" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="28" fill="#1f2420">Washi form</text>
@@ -273,7 +281,11 @@ const snapshot = {
 
 function refreshSnapshotTexture(): void {
   snapshot.url = `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || 'Save'))}`;
-  runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
+  runtime.setAngles?.([
+    { opId: 'quarter-fold-1', angleDeg: foldAngles['quarter-fold-1'] },
+    { opId: 'quarter-fold-2', angleDeg: foldAngles['quarter-fold-2'] },
+    { opId: 'quarter-fold-3', angleDeg: foldAngles['quarter-fold-3'] }
+  ]);
 }
 
 
@@ -436,36 +448,34 @@ async function mountLiveMirrorSpike(): Promise<void> {
     paper: { width: 300, height: 144 },
     foldOps: [
       {
-        id: 'live-first-third-fold',
+        id: 'live-quarter-fold-1',
         targetNodeId: ROOT_ID,
-        childNodeId: 'live-right-panel',
-        line: { a: { x: 100, y: 0 }, b: { x: 100, y: 144 } },
+        childNodeId: 'live-right-three-quarter-panel',
+        line: { a: { x: 75, y: 0 }, b: { x: 75, y: 144 } },
+        movingSide: 1,
+        angleDeg: 45
+      },
+      {
+        id: 'live-quarter-fold-2',
+        targetNodeId: 'live-right-three-quarter-panel',
+        childNodeId: 'live-right-half-panel',
+        line: { a: { x: 150, y: 0 }, b: { x: 150, y: 144 } },
         movingSide: 1,
         angleDeg: -45
       },
       {
-        id: 'live-second-third-fold',
-        targetNodeId: 'live-right-panel',
-        childNodeId: 'live-last-third-panel',
-        line: { a: { x: 200, y: 0 }, b: { x: 200, y: 144 } },
+        id: 'live-quarter-fold-3',
+        targetNodeId: 'live-right-half-panel',
+        childNodeId: 'live-right-quarter-panel',
+        line: { a: { x: 225, y: 0 }, b: { x: 225, y: 144 } },
         movingSide: 1,
         angleDeg: 45
-      },
+      }
     ],
     snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),
     visual: { backend: 'live-mirror', pseudoStates: { hover: true, active: true } }
   });
   await liveRuntime.mount();
-
-  // Keep the third piece as one intact surface. The extra diagonal bias is applied
-  // to the already-folded third panel itself, instead of creating another child
-  // fragment through the button area (which reads like tearing the paper open).
-  const lastThirdPanel = liveMirrorTargetElement.querySelector<HTMLElement>('[data-ori-node-id="live-last-third-panel"]');
-  if (lastThirdPanel) {
-    lastThirdPanel.dataset.diagonalPanelFold = 'true';
-    lastThirdPanel.style.transformOrigin = '0 100%';
-    lastThirdPanel.style.transform = `${lastThirdPanel.style.transform} rotate3d(-1, 1, 0, 45deg)`;
-  }
 
   liveMirrorTargetElement.dataset.liveMirrorReady = 'true';
 }
@@ -559,43 +569,21 @@ await mountFoldedCodeExamples();
 startIntroAnimation();
 
 function startIntroAnimation(): void {
-  const start = -60;
-  const end = 0;
-  const duration = 950;
-  const startedAt = performance.now();
-  stageElement.dataset.intro = 'folding';
-  delete stageElement.dataset.toolsReady;
-
-  const tick = (now: number) => {
-    const progress = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const angle = Math.round(start + (end - start) * eased);
-    foldAngles['center-valley'] = angle;
-    runtime.setAngle('center-valley', angle);
-    stageElement.dataset.centerAngle = String(angle);
-
-    if (progress < 1) {
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    foldAngles['center-valley'] = 0;
-    runtime.setAngle('center-valley', 0);
-    stageElement.dataset.centerAngle = '0';
-    stageElement.dataset.toolsReady = 'true';
-    delete stageElement.dataset.intro;
-    renderCreaseTools();
-  };
-
-  requestAnimationFrame(tick);
+  stageElement.dataset.toolsReady = 'true';
+  renderCreaseTools();
+  applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
 }
 
 button.addEventListener('click', () => {
   folded = !folded;
-  foldAngles['center-valley'] = 0;
-  foldAngles['corner-mountain'] = folded ? 48 : 0;
-  runtime.setAngle('center-valley', foldAngles['center-valley']);
-  runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
+  foldAngles['quarter-fold-1'] = folded ? 45 : 0;
+  foldAngles['quarter-fold-2'] = folded ? -45 : 0;
+  foldAngles['quarter-fold-3'] = folded ? 45 : 0;
+  runtime.setAngles?.([
+    { opId: 'quarter-fold-1', angleDeg: foldAngles['quarter-fold-1'] },
+    { opId: 'quarter-fold-2', angleDeg: foldAngles['quarter-fold-2'] },
+    { opId: 'quarter-fold-3', angleDeg: foldAngles['quarter-fold-3'] }
+  ]);
   renderCreaseTools();
   applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
 });
