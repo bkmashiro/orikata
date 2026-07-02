@@ -676,7 +676,7 @@ class LiveMirrorRenderer {
       const dom = this.ensureFragment(piece.nodeId);
       dom.fragmentEl.dataset.oriNodeId = piece.nodeId;
       dom.fragmentEl.style.transform = piece.transform;
-      dom.clipEl.style.clipPath = polygonToBleedClipPath(piece.polygon, 0.75);
+      dom.clipEl.style.clipPath = polygonToBleedClipPath(piece.polygon, 2.5);
       this.rootElement.appendChild(dom.fragmentEl);
     }
 

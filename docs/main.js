@@ -403,7 +403,7 @@ var v = class {
 		for (let t of e) {
 			n.add(t.nodeId);
 			let e = this.ensureFragment(t.nodeId);
-			e.fragmentEl.dataset.oriNodeId = t.nodeId, e.fragmentEl.style.transform = t.transform, e.clipEl.style.clipPath = te(t.polygon, .75), this.rootElement.appendChild(e.fragmentEl);
+			e.fragmentEl.dataset.oriNodeId = t.nodeId, e.fragmentEl.style.transform = t.transform, e.clipEl.style.clipPath = te(t.polygon, 2.5), this.rootElement.appendChild(e.fragmentEl);
 		}
 		for (let [e, t] of this.fragments) n.has(e) || (t.fragmentEl.remove(), this.fragments.delete(e));
 	}

@@ -490,7 +490,12 @@
         inset: 0;
         background:
           radial-gradient(circle at 20% 30%, rgba(182,95,69,.12), transparent 22%),
-          repeating-linear-gradient(45deg, rgba(31,36,32,.055) 0 1px, transparent 1px 14px);
+          linear-gradient(90deg, rgba(31,36,32,.13) 1px, transparent 1px),
+          linear-gradient(rgba(31,36,32,.11) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(31,36,32,.055) 1px, transparent 1px),
+          linear-gradient(rgba(31,36,32,.05) 1px, transparent 1px);
+        background-size: auto, 48px 48px, 48px 48px, 12px 12px, 12px 12px;
+        background-position: 0 0, -1px -1px, -1px -1px, -1px -1px, -1px -1px;
       }
       .live-card-source h3 {
         position: relative;
@@ -523,16 +528,18 @@
       }
       .live-shine {
         position: absolute;
-        left: -30%;
-        top: 0;
-        width: 28%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,.36), transparent);
+        left: -42px;
+        top: -1px;
+        width: 44px;
+        height: calc(100% + 2px);
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.16) 24%, rgba(255,255,255,.48) 50%, rgba(255,255,255,.16) 76%, transparent 100%);
+        filter: blur(.2px);
         animation: live-shine 1.8s infinite;
+        will-change: transform;
       }
       @keyframes live-shine {
         from { transform: translateX(0); }
-        to { transform: translateX(520%); }
+        to { transform: translateX(176px); }
       }
       .live-card-source button span:last-child { position: relative; }
       #liveMirrorTarget .ori-source-layer {
