@@ -6,122 +6,175 @@
     <title>Orikata — folded DOM runtime</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #07080d;
-        --panel: rgba(255, 255, 255, 0.075);
-        --panel-strong: rgba(255, 255, 255, 0.12);
-        --text: #f8fafc;
-        --muted: #a8b3cf;
-        --line: rgba(255, 255, 255, 0.14);
-        --blue: #67e8f9;
-        --violet: #a78bfa;
-        --pink: #f472b6;
+        color-scheme: light;
+        --paper: #f7f1e4;
+        --paper-warm: #efe4d0;
+        --ink: #1f2420;
+        --muted: #766f64;
+        --line: rgba(31, 36, 32, 0.16);
+        --line-strong: rgba(31, 36, 32, 0.28);
+        --sumi: #2b2f2a;
+        --vermilion: #b65f45;
       }
       * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         min-height: 100vh;
         margin: 0;
-        color: var(--text);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", Georgia, serif;
         background:
-          radial-gradient(circle at 18% 14%, rgba(103, 232, 249, 0.24), transparent 28%),
-          radial-gradient(circle at 82% 20%, rgba(167, 139, 250, 0.28), transparent 26%),
-          radial-gradient(circle at 68% 78%, rgba(244, 114, 182, 0.18), transparent 30%),
-          var(--bg);
+          radial-gradient(circle at 20% 12%, rgba(182, 95, 69, .11), transparent 28%),
+          radial-gradient(circle at 82% 72%, rgba(31, 36, 32, .08), transparent 30%),
+          linear-gradient(120deg, rgba(255,255,255,.56), transparent 34%),
+          var(--paper);
       }
       body::before {
         content: "";
         position: fixed;
         inset: 0;
         pointer-events: none;
-        background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-        background-size: 44px 44px;
-        mask-image: radial-gradient(circle at 50% 26%, black 0 44%, transparent 78%);
+        opacity: .42;
+        background-image:
+          linear-gradient(90deg, rgba(31,36,32,.025) 1px, transparent 1px),
+          linear-gradient(rgba(31,36,32,.018) 1px, transparent 1px),
+          radial-gradient(circle at 32% 18%, rgba(31,36,32,.08) 0 1px, transparent 1px);
+        background-size: 68px 68px, 68px 68px, 19px 19px;
+        mix-blend-mode: multiply;
       }
-      a { color: inherit; }
+      a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
       .shell {
-        width: min(1120px, calc(100vw - 32px));
+        position: relative;
+        width: min(1040px, calc(100vw - 32px));
         margin: 0 auto;
-        padding: 28px 0 44px;
+        padding: 26px 0 54px;
       }
       nav {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 20px;
-        padding: 12px 0 56px;
+        margin-bottom: 38px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+        letter-spacing: .04em;
       }
-      .brand { display: flex; align-items: center; gap: 10px; font-weight: 750; letter-spacing: -0.03em; }
-      .mark {
-        width: 34px; height: 34px; border-radius: 10px;
-        background: conic-gradient(from 210deg, var(--blue), var(--violet), var(--pink), var(--blue));
-        box-shadow: 0 0 32px rgba(167, 139, 250, .38);
-      }
-      .nav-links { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 14px; }
-      .pill {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
-        background: rgba(255,255,255,.045); text-decoration: none;
-      }
+      .brand { display: inline-flex; align-items: center; gap: 12px; }
+      .mon { width: 28px; height: 28px; display: inline-block; }
+      .nav-links { display: flex; gap: 18px; color: var(--muted); }
       .hero {
+        min-height: calc(100vh - 148px);
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 520px;
-        align-items: center;
-        gap: 56px;
+        place-items: center;
+        text-align: center;
       }
+      .copy { max-width: 760px; margin: 0 auto 28px; }
       .eyebrow {
-        display: inline-flex; align-items: center; gap: 8px;
-        color: #cffafe; border: 1px solid rgba(103, 232, 249, .28);
-        background: rgba(103, 232, 249, .08); border-radius: 999px;
-        padding: 7px 11px; font-size: 13px; margin-bottom: 22px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: .24em;
+        text-transform: uppercase;
       }
-      h1 { margin: 0; font-size: clamp(48px, 7vw, 88px); line-height: .92; letter-spacing: -0.08em; }
-      .lead { margin: 24px 0 0; max-width: 610px; color: var(--muted); font-size: 19px; line-height: 1.7; }
-      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-      .button {
-        display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-        min-height: 44px; padding: 0 16px; border-radius: 999px;
-        border: 1px solid rgba(255,255,255,.16); text-decoration: none; font-weight: 700;
+      .eyebrow::before, .eyebrow::after {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: var(--line-strong);
       }
-      .button.primary { color: #06111a; background: linear-gradient(135deg, var(--blue), var(--violet)); border: 0; }
+      h1 {
+        margin: 0;
+        font-weight: 400;
+        font-size: clamp(44px, 8vw, 96px);
+        line-height: .98;
+        letter-spacing: -.055em;
+      }
+      .jp {
+        display: block;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: clamp(15px, 2vw, 19px);
+        letter-spacing: .42em;
+        font-weight: 400;
+      }
+      .lead {
+        max-width: 620px;
+        margin: 22px auto 0;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 15px;
+        line-height: 1.8;
+      }
       .install {
-        display: inline-flex; align-items: center; margin-top: 18px;
-        padding: 10px 13px; border: 1px solid var(--line); border-radius: 14px;
-        background: rgba(0,0,0,.28); color: #e2e8f0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px;
+        display: inline-flex;
+        margin-top: 18px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255,255,255,.28);
+        color: var(--sumi);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
       }
-      .demo-wrap {
-        border: 1px solid var(--line); border-radius: 28px; padding: 18px;
-        background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.045));
-        box-shadow: 0 28px 110px rgba(0,0,0,.38);
+      .stage {
+        width: min(100%, 620px);
+        margin: 0 auto;
+        padding: 26px 24px 22px;
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.44), rgba(255,255,255,.18)),
+          rgba(239, 228, 208, .58);
+        box-shadow: 0 26px 80px rgba(49, 42, 32, .11);
+      }
+      .fold-note {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 14px;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 12px;
+        letter-spacing: .08em;
+      }
+      .fold-note strong {
+        color: var(--ink);
+        font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+        font-weight: 500;
+        font-size: 15px;
+        letter-spacing: .16em;
       }
       #target {
         position: relative;
         width: 420px;
         height: 220px;
         margin: 0 auto;
-        border-radius: 24px;
-        perspective: 900px;
+        perspective: 980px;
       }
       .card-source {
         position: relative;
         width: 420px;
         height: 220px;
         padding: 30px 32px;
-        border-radius: 24px;
         overflow: hidden;
       }
-      .card-source h2 { margin: 0 0 8px; font-size: 34px; letter-spacing: -0.05em; }
-      .card-source p { margin: 0; max-width: 190px; color: rgba(255,255,255,.82); line-height: 1.45; }
+      .card-source h2 { margin: 0 0 8px; font-weight: 400; font-size: 30px; letter-spacing: -.04em; }
+      .card-source p { margin: 0; max-width: 190px; color: rgba(31,36,32,.72); line-height: 1.55; }
       .card-source input {
         position: absolute;
         left: 270px;
         top: 82px;
         width: 100px;
         height: 30px;
-        border: 1px solid rgba(255,255,255,.5);
-        border-radius: 10px;
-        padding: 0 10px;
-        color: #0f172a;
+        border: 1px solid rgba(31,36,32,.3);
+        border-radius: 0;
+        padding: 0 9px;
+        color: var(--ink);
+        background: rgba(255,255,255,.72);
       }
       .card-source button {
         position: absolute;
@@ -129,108 +182,117 @@
         top: 132px;
         width: 100px;
         height: 36px;
-        border: 0;
-        border-radius: 999px;
-        color: #111827;
-        background: white;
-        font-weight: 800;
-        box-shadow: 0 12px 24px rgba(15,23,42,.2);
+        border: 1px solid rgba(31,36,32,.22);
+        border-radius: 0;
+        color: var(--paper);
+        background: var(--sumi);
+        font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+        cursor: pointer;
       }
-      .controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
-      #toggle { padding: 10px 14px; border: 0; border-radius: 999px; color: #071018; background: white; font-weight: 800; cursor: pointer; }
-      .status { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); }
-      .status span { padding: 8px 10px; border: 1px solid var(--line); border-radius: 999px; background: rgba(0,0,0,.18); }
-      .status strong { color: var(--text); }
-      .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 46px; }
-      .feature { border: 1px solid var(--line); border-radius: 22px; padding: 18px; background: var(--panel); }
-      .feature h3 { margin: 0 0 8px; font-size: 16px; }
-      .feature p { margin: 0; color: var(--muted); line-height: 1.6; font-size: 14px; }
-      .code { margin-top: 18px; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: rgba(0,0,0,.42); }
-      .code pre { margin: 0; padding: 18px; overflow-x: auto; color: #dbeafe; font-size: 13px; line-height: 1.65; }
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-top: 18px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #toggle {
+        min-height: 38px;
+        padding: 0 15px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        color: var(--ink);
+        background: transparent;
+        cursor: pointer;
+      }
+      .status { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
+      .status strong { color: var(--ink); font-weight: 600; }
+      .caption {
+        max-width: 580px;
+        margin: 22px auto 0;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+        line-height: 1.8;
+      }
+      .footer {
+        margin-top: 44px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 13px;
+      }
       .ori-source-layer { opacity: 0; pointer-events: auto; z-index: 0; }
       .ori-visual-layer { z-index: 1; }
       .ori-interaction-layer { pointer-events: auto; background: transparent; z-index: 2; }
       .ori-activation-layer { z-index: 3; pointer-events: none; }
-      @media (max-width: 940px) {
-        nav { padding-bottom: 34px; }
-        .hero { grid-template-columns: 1fr; }
-        .demo-wrap { max-width: 460px; }
-        .features { grid-template-columns: 1fr; }
-      }
-      @media (max-width: 520px) {
-        .shell { width: min(100% - 20px, 1120px); }
-        .nav-links { display: none; }
-        .demo-wrap { transform: scale(.82); transform-origin: top left; width: 456px; margin-bottom: -64px; }
+      @media (max-width: 560px) {
+        .shell { width: min(100% - 22px, 1040px); padding-top: 18px; }
+        nav { margin-bottom: 24px; }
+        .nav-links { gap: 12px; }
+        .stage { padding: 18px 10px; overflow: hidden; }
+        .demo-scale { width: 420px; transform: scale(.78); transform-origin: top center; margin: 0 auto -46px; }
+        .fold-note { padding: 0 8px; }
+        .jp { letter-spacing: .28em; }
       }
     </style>
   </head>
   <body>
     <main class="shell">
       <nav>
-        <div class="brand"><span class="mark" aria-hidden="true"></span><span>Orikata</span></div>
+        <div class="brand">
+          <svg class="mon" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M5 6h22v20H5z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M5 6l11 10L27 6M16 16v10M5 26l11-10 11 10" fill="none" stroke="currentColor" stroke-width="1.1" opacity=".7"/>
+          </svg>
+          <span>Orikata</span>
+        </div>
         <div class="nav-links">
-          <a class="pill" href="https://www.npmjs.com/package/orikata">npm</a>
-          <a class="pill" href="https://github.com/bkmashiro/orikata">GitHub</a>
+          <a href="https://www.npmjs.com/package/orikata">npm</a>
+          <a href="https://github.com/bkmashiro/orikata">GitHub</a>
         </div>
       </nav>
 
       <section class="hero">
         <div>
-          <div class="eyebrow">Fold DOM elements without cloning the app</div>
-          <h1>Pseudo-3D origami for real DOM.</h1>
-          <p class="lead">Orikata renders folded visual panels, then maps pointer hits back to the original source element. KISS first: static views, baked manifests, button clicks, and text input proxies.</p>
-          <div class="actions">
-            <a class="button primary" href="#demo">Try the folded form</a>
-            <a class="button" href="https://github.com/bkmashiro/orikata">View source</a>
+          <div class="copy">
+            <div class="eyebrow">folded DOM runtime</div>
+            <h1>Orikata<span class="jp">折り方</span></h1>
+            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo uses a masu-box inspired crease: a valley fold through the center, then a small diagonal flap on patterned washi.</p>
+            <code class="install">npm install orikata</code>
           </div>
-          <code class="install">npm install orikata</code>
-        </div>
 
-        <div class="demo-wrap" id="demo">
-          <section id="target" aria-label="Folded Orikata demo">
-            <div class="card-source">
-              <h2>Paper UI</h2>
-              <p>Click the folded button or type into the folded input.</p>
-              <input id="nameInput" type="text" value="Alice" aria-label="Name" />
-              <button id="saveBtn">Save</button>
+          <section class="stage" id="demo" aria-label="Interactive Orikata demo">
+            <div class="fold-note"><strong>升箱の折り目</strong><span>center valley + corner mountain fold</span></div>
+            <div class="demo-scale">
+              <section id="target" aria-label="Folded patterned DOM demo">
+                <div class="card-source">
+                  <h2>Washi form</h2>
+                  <p>Click the folded button or type into the folded input.</p>
+                  <input id="nameInput" type="text" value="Aoi" aria-label="Name" />
+                  <button id="saveBtn">Save</button>
+                </div>
+              </section>
+              <div class="controls">
+                <button id="toggle">open / fold</button>
+                <div class="status">
+                  <span>clicks <strong id="clickCount">0</strong></span>
+                  <span>value <strong id="sourceValue">Aoi</strong></span>
+                </div>
+              </div>
             </div>
+            <p class="caption">The visible layer is a patterned snapshot. Pointer hits on the folded paper are mapped back to the original hidden input and button.</p>
           </section>
-          <div class="controls">
-            <button id="toggle">Toggle fold</button>
-            <div class="status">
-              <span>Clicks: <strong id="clickCount">0</strong></span>
-              <span>Value: <strong id="sourceValue">Alice</strong></span>
-            </div>
+
+          <div class="footer">
+            <a href="https://github.com/bkmashiro/orikata">source</a>
+            <a href="https://www.npmjs.com/package/orikata">package</a>
           </div>
         </div>
-      </section>
-
-      <section class="features" aria-label="Orikata features">
-        <article class="feature"><h3>Static view</h3><p>Render folded snapshots for presentation, playback, or decorative UI surfaces.</p></article>
-        <article class="feature"><h3>Interactive bridge</h3><p>Keep one real DOM source while folded hit tests activate buttons, links, and text inputs.</p></article>
-        <article class="feature"><h3>Baked view</h3><p>Precompute fold manifests for immutable, lightweight embeds and static pages.</p></article>
-      </section>
-
-      <section class="code" aria-label="Code sample">
-        <pre><code>import { ROOT_ID, StaticImageSnapshotProvider, createOrigamiRuntime } from 'orikata';
-
-const runtime = createOrigamiRuntime({
-  mode: 'interactive-bridge',
-  host,
-  sourceRoot,
-  paper: { width: 420, height: 220 },
-  foldOps: [{
-    id: 'fold-right',
-    targetNodeId: ROOT_ID,
-    childNodeId: 'right-panel',
-    line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
-    movingSide: 1,
-    angleDeg: -35
-  }],
-  snapshotProvider: new StaticImageSnapshotProvider(snapshot)
-});
-
-await runtime.mount();</code></pre>
       </section>
     </main>
     <script type="module" src="/demo/main.ts"></script>
