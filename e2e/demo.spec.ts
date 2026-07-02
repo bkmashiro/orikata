@@ -93,6 +93,7 @@ test('live mirror spike renders visual clones and syncs folded hover state', asy
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveCSS('background-color', 'rgb(182, 95, 69)');
   await expect(live.locator('.ori-live-mirror .live-shine').first()).toHaveCSS('animation-name', 'live-shine');
+  await expect(live.locator('.ori-live-mirror [data-fold-original-id="liveMirrorButton"]').first()).toHaveCSS('overflow', 'hidden');
 });
 
 test('example mode cards show distinct static, interactive, and baked behavior', async ({ page }) => {
