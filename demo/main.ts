@@ -1,4 +1,4 @@
-import { ROOT_ID, StaticImageSnapshotProvider, buildBakedOrigamiManifest, createOrigamiRuntime } from '../src/index';
+import { ROOT_ID, StaticImageSnapshotProvider, buildBakedOrigamiManifest, createFoldPlan, createOrigamiRuntime, inspectFoldPlan } from '../src/index';
 
 const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
@@ -80,24 +80,16 @@ nameInputElement.addEventListener('input', () => {
   setSnapshotInputValue(nameInputElement.value);
 });
 
-const foldOps = [
-  {
-    id: 'center-valley',
-    targetNodeId: ROOT_ID,
-    childNodeId: 'right-panel',
-    line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
-    movingSide: 1 as const,
-    angleDeg: -60
-  },
-  {
-    id: 'corner-mountain',
-    targetNodeId: 'right-panel',
-    childNodeId: 'upper-corner-flap',
-    line: { a: { x: 300, y: 0 }, b: { x: 420, y: 80 } },
-    movingSide: 1 as const,
-    angleDeg: 48
-  }
-];
+const mainFoldPlan = createFoldPlan({ width: 420, height: 220 })
+  .preCrease('center-guide', { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } })
+  .foldRight({ id: 'center-valley', childId: 'right-panel', x: 210, angle: -60 })
+  .foldCorner({ id: 'corner-mountain', childId: 'upper-corner-flap', corner: 'top-right', target: 'right-panel', size: 120, angle: 48 });
+
+const foldOps = mainFoldPlan.foldOps;
+const foldPlanInspection = inspectFoldPlan({ paper: { width: 420, height: 220 }, foldOps });
+if (foldPlanInspection.warnings.length > 0) {
+  stageElement.dataset.foldWarnings = foldPlanInspection.warnings.map((warning) => warning.code).join(' ');
+}
 
 const foldAngles: Record<string, number> = {
   'center-valley': -60,

@@ -47,6 +47,35 @@ await runtime.mount();
 runtime.setAngle('fold-right', -20);
 ```
 
+## Fold plan helpers
+
+For product code, prefer the high-level fold-plan helpers over hand-writing `movingSide` and nested `targetNodeId` values:
+
+```ts
+import { createFoldPlan, inspectFoldPlan } from 'orikata';
+
+const plan = createFoldPlan({ width: 420, height: 220 })
+  .preCrease('center-guide', {
+    a: { x: 210, y: 0 },
+    b: { x: 210, y: 220 }
+  })
+  .foldRight({ id: 'center-valley', childId: 'right-panel', x: 210, angle: 0 })
+  .foldCorner({
+    id: 'corner-mountain',
+    childId: 'upper-corner-flap',
+    corner: 'top-right',
+    target: 'right-panel',
+    size: 120,
+    angle: 48
+  });
+
+const inspection = inspectFoldPlan({ paper: { width: 420, height: 220 }, foldOps: plan.foldOps });
+```
+
+`preCrease` records a guide/crease without rotating a face. This helps avoid the common “paper looks cut in half” mistake where a large active root fold is used when the intended visual is a flat crease plus a smaller local flap. `inspectFoldPlan` returns the derived fold tree plus warnings such as `large-root-active-fold`, invalid targets, and tiny folded faces.
+
+See [docs/dx.md](docs/dx.md) for the full DX guide.
+
 ## Interactive bridge
 
 `interactive-bridge` keeps the original DOM as the source of truth. The visual layer is folded, but events are hit-tested through the folded geometry and routed back to source elements through adapters.

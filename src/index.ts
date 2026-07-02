@@ -53,6 +53,26 @@ export interface OrigamiDocumentState {
   selectedNodeId?: Id;
 }
 
+export interface PreCrease {
+  id: Id;
+  targetNodeId: Id;
+  line: HingeLine;
+}
+
+export type FoldCorner = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+
+export interface FoldPlanInspectionWarning {
+  code: 'large-root-active-fold' | 'invalid-fold-op' | 'tiny-fold-face';
+  severity: 'warning' | 'error';
+  opId: Id;
+  message: string;
+}
+
+export interface FoldPlanInspection {
+  tree: DerivedFoldTree;
+  warnings: FoldPlanInspectionWarning[];
+}
+
 export type Polygon = Point2[];
 
 export type Mat4 = [
@@ -223,6 +243,160 @@ function rootPolygon(paper: PaperSpec): Polygon {
     { x: paper.width, y: paper.height },
     { x: 0, y: paper.height }
   ];
+}
+
+function polygonArea(polygon: Polygon): number {
+  let area = 0;
+  for (let index = 0; index < polygon.length; index += 1) {
+    const current = polygon[index];
+    const next = polygon[(index + 1) % polygon.length];
+    area += current.x * next.y - next.x * current.y;
+  }
+  return Math.abs(area) / 2;
+}
+
+function cloneLine(line: HingeLine): HingeLine {
+  return { a: { ...line.a }, b: { ...line.b } };
+}
+
+function defaultChildName(id: string): string {
+  return id.startsWith('fold-') ? `${id.slice(5)}-panel` : `${id}-panel`;
+}
+
+function cornerGeometry(paper: PaperSpec, corner: FoldCorner, size: number): { line: HingeLine; movingSide: Side; childId: Id } {
+  const width = paper.width;
+  const height = paper.height;
+  switch (corner) {
+    case 'top-right':
+      return {
+        line: { a: { x: width - size, y: 0 }, b: { x: width, y: size } },
+        movingSide: 1,
+        childId: 'top-right-flap'
+      };
+    case 'top-left':
+      return {
+        line: { a: { x: size, y: 0 }, b: { x: 0, y: size } },
+        movingSide: -1,
+        childId: 'top-left-flap'
+      };
+    case 'bottom-right':
+      return {
+        line: { a: { x: width - size, y: height }, b: { x: width, y: height - size } },
+        movingSide: -1,
+        childId: 'bottom-right-flap'
+      };
+    case 'bottom-left':
+      return {
+        line: { a: { x: 0, y: height - size }, b: { x: size, y: height } },
+        movingSide: -1,
+        childId: 'bottom-left-flap'
+      };
+  }
+}
+
+export class FoldPlanBuilder {
+  readonly paper: PaperSpec;
+  readonly foldOps: FoldOp[] = [];
+  readonly creases: PreCrease[] = [];
+
+  constructor(paper: PaperSpec) {
+    this.paper = { ...paper };
+  }
+
+  preCrease(id: Id, line: HingeLine, options: { target?: Id } = {}): this {
+    this.creases.push({ id, targetNodeId: options.target ?? ROOT_ID, line: cloneLine(line) });
+    return this;
+  }
+
+  foldRight(options: { id?: Id; childId?: Id; target?: Id; x: number; angle: number }): this {
+    const id = options.id ?? 'fold-right';
+    this.foldOps.push({
+      id,
+      targetNodeId: options.target ?? ROOT_ID,
+      childNodeId: options.childId ?? defaultChildName(id),
+      line: { a: { x: options.x, y: 0 }, b: { x: options.x, y: this.paper.height } },
+      movingSide: 1,
+      angleDeg: options.angle
+    });
+    return this;
+  }
+
+  foldLeft(options: { id?: Id; childId?: Id; target?: Id; x: number; angle: number }): this {
+    const id = options.id ?? 'fold-left';
+    this.foldOps.push({
+      id,
+      targetNodeId: options.target ?? ROOT_ID,
+      childNodeId: options.childId ?? defaultChildName(id),
+      line: { a: { x: options.x, y: 0 }, b: { x: options.x, y: this.paper.height } },
+      movingSide: -1,
+      angleDeg: options.angle
+    });
+    return this;
+  }
+
+  foldCorner(options: { corner: FoldCorner; size: number; angle: number; id?: Id; childId?: Id; target?: Id }): this {
+    const id = options.id ?? `fold-${options.corner}`;
+    const geometry = cornerGeometry(this.paper, options.corner, options.size);
+    this.foldOps.push({
+      id,
+      targetNodeId: options.target ?? ROOT_ID,
+      childNodeId: options.childId ?? geometry.childId,
+      line: geometry.line,
+      movingSide: geometry.movingSide,
+      angleDeg: options.angle
+    });
+    return this;
+  }
+
+  zFold(options: { axis?: 'vertical'; angles: [number, number]; ids?: [Id, Id]; childIds?: [Id, Id] }): this {
+    const firstId = options.ids?.[0] ?? 'fold-first-third';
+    const secondId = options.ids?.[1] ?? 'fold-last-third';
+    const firstChild = options.childIds?.[0] ?? 'first-third-panel';
+    const secondChild = options.childIds?.[1] ?? 'last-third-panel';
+    const third = this.paper.width / 3;
+    this.foldOps.push({
+      id: firstId,
+      targetNodeId: ROOT_ID,
+      childNodeId: firstChild,
+      line: { a: { x: third, y: 0 }, b: { x: third, y: this.paper.height } },
+      movingSide: -1,
+      angleDeg: options.angles[0]
+    });
+    this.foldOps.push({
+      id: secondId,
+      targetNodeId: ROOT_ID,
+      childNodeId: secondChild,
+      line: { a: { x: third * 2, y: 0 }, b: { x: third * 2, y: this.paper.height } },
+      movingSide: 1,
+      angleDeg: options.angles[1]
+    });
+    return this;
+  }
+
+  toDocumentState(camera?: Partial<CameraSpec>): OrigamiDocumentState {
+    const controls = Object.fromEntries(this.creases.map((crease) => [
+      crease.id,
+      {
+        id: crease.id,
+        targetNodeId: crease.targetNodeId,
+        a: { ...crease.line.a },
+        b: { ...crease.line.b },
+        movingSide: 1 as Side,
+        angleDeg: 0,
+        status: 'draft' as const
+      }
+    ]));
+    return {
+      paper: { ...this.paper },
+      camera: defaultCamera(this.paper, camera),
+      foldOps: cloneFoldOps(this.foldOps),
+      controls
+    };
+  }
+}
+
+export function createFoldPlan(paper: PaperSpec): FoldPlanBuilder {
+  return new FoldPlanBuilder(paper);
 }
 
 function signedDistanceToLine(point: Point2, line: HingeLine): number {
@@ -433,6 +607,51 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
     renderOrder: Object.values(nodes).sort((a, b) => a.depth - b.depth).map((node) => node.id),
     invalidOps
   };
+}
+
+export function inspectFoldPlan(options: {
+  paper: PaperSpec;
+  foldOps: FoldOp[];
+  camera?: Partial<CameraSpec>;
+}): FoldPlanInspection {
+  const camera = defaultCamera(options.paper, options.camera);
+  const tree = buildDerivedFoldTree({ paper: options.paper, camera, foldOps: cloneFoldOps(options.foldOps), controls: {} });
+  const warnings: FoldPlanInspectionWarning[] = [];
+
+  for (const [opId, message] of Object.entries(tree.invalidOps)) {
+    warnings.push({ code: 'invalid-fold-op', severity: 'error', opId, message });
+  }
+
+  const paperArea = options.paper.width * options.paper.height;
+  const firstActiveRootFold = options.foldOps.find((op) => !op.disabled && op.targetNodeId === ROOT_ID && !tree.invalidOps[op.id]);
+  if (firstActiveRootFold && Math.abs(firstActiveRootFold.angleDeg) >= 35) {
+    const child = tree.nodes[firstActiveRootFold.childNodeId];
+    const childAreaRatio = child ? polygonArea(child.polygon) / paperArea : 0;
+    if (childAreaRatio >= 0.4 && childAreaRatio <= 0.6) {
+      warnings.push({
+        code: 'large-root-active-fold',
+        severity: 'warning',
+        opId: firstActiveRootFold.id,
+        message: `The first active fold rotates ${(childAreaRatio * 100).toFixed(0)}% of the root sheet. This can read like the paper was cut in half; use a pre-crease at 0° or target a smaller local flap when that is the intended visual.`
+      });
+    }
+  }
+
+  for (const op of options.foldOps) {
+    const child = tree.nodes[op.childNodeId];
+    if (!child) continue;
+    const areaRatio = polygonArea(child.polygon) / paperArea;
+    if (areaRatio > 0 && areaRatio < 0.015) {
+      warnings.push({
+        code: 'tiny-fold-face',
+        severity: 'warning',
+        opId: op.id,
+        message: `Fold '${op.id}' creates a very small face (${(areaRatio * 100).toFixed(1)}% of the paper). It may alias or disappear in CSS 3D; increase flap size or simplify the fold.`
+      });
+    }
+  }
+
+  return { tree, warnings };
 }
 
 function polygonToClipPath(polygon: Polygon): string {
