@@ -451,19 +451,22 @@ async function mountLiveMirrorSpike(): Promise<void> {
         movingSide: 1,
         angleDeg: 45
       },
-      {
-        id: 'live-diagonal-button-fold',
-        targetNodeId: 'live-last-third-panel',
-        childNodeId: 'live-button-flap',
-        line: { a: { x: 205, y: 44 }, b: { x: 292, y: 118 } },
-        movingSide: 1,
-        angleDeg: -58
-      }
     ],
     snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),
     visual: { backend: 'live-mirror', pseudoStates: { hover: true, active: true } }
   });
   await liveRuntime.mount();
+
+  // Keep the third piece as one intact surface. The extra diagonal bias is applied
+  // to the already-folded third panel itself, instead of creating another child
+  // fragment through the button area (which reads like tearing the paper open).
+  const lastThirdPanel = liveMirrorTargetElement.querySelector<HTMLElement>('[data-ori-node-id="live-last-third-panel"]');
+  if (lastThirdPanel) {
+    lastThirdPanel.dataset.diagonalPanelFold = 'true';
+    lastThirdPanel.style.transformOrigin = '0 100%';
+    lastThirdPanel.style.transform = `${lastThirdPanel.style.transform} rotate3d(-1, 1, 0, 45deg)`;
+  }
+
   liveMirrorTargetElement.dataset.liveMirrorReady = 'true';
 }
 

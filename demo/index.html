@@ -500,12 +500,12 @@
       .live-card-source::after {
         content: "";
         position: absolute;
-        left: 203px;
-        top: 43px;
-        width: 114px;
+        left: 200px;
+        top: 0;
+        width: 176px;
         height: 0;
-        border-top: 1.4px dashed rgba(182,95,69,.52);
-        transform: rotate(40deg);
+        border-top: 1.4px dashed rgba(182,95,69,.42);
+        transform: rotate(55deg);
         transform-origin: left center;
         pointer-events: none;
       }
@@ -523,9 +523,9 @@
       }
       .live-card-source button {
         position: absolute;
-        left: 174px;
+        left: 214px;
         top: 56px;
-        width: 90px;
+        width: 66px;
         height: 34px;
         overflow: hidden;
         border: 1px solid rgba(31,36,32,.2);
@@ -665,7 +665,7 @@
           <div class="copy">
             <div class="eyebrow">folded DOM runtime</div>
             <h1>Orikata<span class="jp">折り方</span></h1>
-            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo now treats the center line as a pre-crease, then folds only a small diagonal corner flap on patterned washi.</p>
+            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo keeps folded panels intact, then biases the rightmost panel inward along a diagonal so it reads as one continuous sheet.</p>
             <div class="install-wrap">
               <code class="install" id="installCommand">npm install orikata</code>
               <button class="copy-install" id="copyInstall" type="button" aria-label="copy install command">copy</button>
@@ -697,7 +697,7 @@
                 <button id="toggle">open / fold</button>
               </div>
             </div>
-            <p class="caption">Step 1 is a flat center pre-crease; step 2 folds a local corner flap on the already-defined right panel. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
+            <p class="caption">Step 1 is a flat center pre-crease; step 2 folds the right side, and the rightmost third keeps its button intact while leaning inward on a diagonal. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
           </section>
 
           <section class="live-spike" aria-label="Live mirror backend">
