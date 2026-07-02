@@ -53,6 +53,8 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
 
   const third = page.locator('[data-fold-candidate="quarter-fold-3"]');
   await expect(third).toBeAttached();
+  await expect(third).toHaveCSS('width', '32px');
+  await expect(page.locator('[data-fold-candidate="quarter-fold-1"]')).toHaveCSS('width', '32px');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-active-fold', 'quarter-fold-3');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');

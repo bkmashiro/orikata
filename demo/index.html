@@ -235,14 +235,14 @@
         pointer-events: auto;
         cursor: crosshair;
       }
-      .crease-hotspot.quarter-fold-1 { left: 101px; top: 8px; width: 8px; height: 204px; }
-      .crease-hotspot.quarter-fold-2 { left: 206px; top: 8px; width: 8px; height: 204px; }
-      .crease-hotspot.quarter-fold-3 { left: 311px; top: 8px; width: 8px; height: 204px; }
+      .crease-hotspot.quarter-fold-1 { left: 89px; top: 8px; width: 32px; height: 204px; }
+      .crease-hotspot.quarter-fold-2 { left: 194px; top: 8px; width: 32px; height: 204px; }
+      .crease-hotspot.quarter-fold-3 { left: 299px; top: 8px; width: 32px; height: 204px; }
       .crease-hotspot[data-state="hover"]::after,
       .crease-hotspot[data-state="selected"]::after {
         content: "";
         position: absolute;
-        inset: 0;
+        inset: 0 10px;
         border-radius: 999px;
         background: rgba(182, 95, 69, .1);
       }
