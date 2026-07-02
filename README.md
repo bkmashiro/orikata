@@ -3,7 +3,7 @@
 Pseudo-3D origami/folding effects for DOM elements.
 
 - npm: https://www.npmjs.com/package/orikata
-- Demo: https://bkmashiro.github.io/orikata/
+- Demo: https://orikata.pages.dev/
 - GitHub: https://github.com/bkmashiro/orikata
 
 ```bash

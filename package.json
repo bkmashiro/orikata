@@ -32,7 +32,7 @@
     "vitest": "latest"
   },
   "license": "MIT",
-  "homepage": "https://bkmashiro.github.io/orikata/",
+  "homepage": "https://orikata.pages.dev/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bkmashiro/orikata.git"
