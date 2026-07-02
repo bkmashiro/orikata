@@ -4,7 +4,7 @@ async function waitForIntro(page: import('@playwright/test').Page): Promise<void
   await expect(page.locator('#foldStage')).toHaveAttribute('data-tools-ready', 'true');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '80');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
 }
 
 test('install command copies and folded demo bridges button feedback and text input', async ({ page }) => {
@@ -56,7 +56,7 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
   await expect(page.locator('#foldStage')).toHaveAttribute('data-active-fold', 'quarter-fold-3');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '80');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
   await expect(third).toHaveAttribute('data-state', 'selected');
 
   const second = page.locator('[data-fold-candidate="quarter-fold-2"]');

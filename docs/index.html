@@ -642,7 +642,7 @@
         .examples, .static-showcase { grid-template-columns: 1fr; margin-top: 26px; }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-s7xOvQbb.js"></script>
+    <script type="module" crossorigin src="/assets/index-C2i2_tD1.js"></script>
   </head>
   <body>
     <main class="shell">
@@ -672,7 +672,7 @@
             </div>
           </div>
 
-          <section class="stage" id="foldStage" data-active-fold="quarter-fold-3" data-fold1-angle="45" data-fold2-angle="-45" data-fold3-angle="80" aria-label="Interactive Orikata demo">
+          <section class="stage" id="foldStage" data-active-fold="quarter-fold-3" data-fold1-angle="45" data-fold2-angle="-45" data-fold3-angle="45" aria-label="Interactive Orikata demo">
             <div class="fold-note"><strong>升箱の折り目</strong><span>hover a crease, click to rotate</span></div>
             <div class="demo-scale">
               <section id="target" aria-label="Folded patterned DOM demo">
@@ -687,17 +687,17 @@
               <div class="toolbox" aria-label="Fold editor controls">
                 <div>
                   <div class="tool-kicker">selected crease</div>
-                  <div class="tool-active"><span id="activeFoldName">quarter fold 3</span> <span class="angle-readout" id="angleValue">80°</span></div>
+                  <div class="tool-active"><span id="activeFoldName">quarter fold 3</span> <span class="angle-readout" id="angleValue">45°</span></div>
                 </div>
-                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="80" tabindex="0">
-                  <span id="angleHand" class="angle-hand" style="transform: rotate(80deg)"></span>
+                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="45" tabindex="0">
+                  <span id="angleHand" class="angle-hand" style="transform: rotate(45deg)"></span>
                 </div>
               </div>
               <div class="controls">
                 <button id="toggle">open / fold</button>
               </div>
             </div>
-            <p class="caption">The live mirror demo uses three plain vertical folds: +45° at 1/4, -45° at 2/4, and +80° at 3/4. No diagonal/button-specific cut is applied.</p>
+            <p class="caption">The live mirror demo uses three plain vertical folds; the 3/4 fold animates between +45° and +80° so the button stays readable while the motion remains obvious.</p>
           </section>
 
           <section class="live-spike" aria-label="Live mirror backend">
