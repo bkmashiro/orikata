@@ -289,6 +289,7 @@ function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'):
     return `<text x="16" y="${y}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${escapeSvgText(line)}</text>`;
   }).join('');
   const accent = mode === 'interactive' ? '#b65f45' : mode === 'baked' ? '#766f64' : '#2b2f2a';
+  const creaseStroke = mode === 'interactive' ? '#766f64' : accent;
   const label = mode === 'interactive' ? (status === 'clicked' ? 'Clicked' : 'Tap') : mode === 'baked' ? 'Frozen' : 'View';
   const button = mode === 'interactive'
     ? `<rect x="52" y="96" width="72" height="28" fill="${accent}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${label}</text>`
@@ -308,7 +309,7 @@ function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'):
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
-  <path d="M88 0v148" stroke="${accent}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
+  <path d="M88 0v148" stroke="${creaseStroke}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
   <g filter="url(#paperNoise)">${rows}</g>
   ${button}
 </svg>`;

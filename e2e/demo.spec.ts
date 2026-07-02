@@ -125,7 +125,9 @@ test('example mode cards show distinct static, interactive, and baked behavior',
   expect(interactiveBox).not.toBeNull();
   await page.mouse.click(interactiveBox!.x + 88, interactiveBox!.y + 110);
   await expect(interactiveFold).toHaveAttribute('data-bridge-status', 'clicked');
-  await expect.poll(async () => decodeURIComponent(await interactiveFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage))).toContain('Clicked');
+  const interactiveTexture = await expect.poll(async () => decodeURIComponent(await interactiveFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage)));
+  await interactiveTexture.toContain('Clicked');
+  await interactiveTexture.toContain('stroke="#766f64"');
 
   const bakedFold = page.locator('[data-example-mode="baked"]');
   await expect(bakedFold).toHaveAttribute('data-baked-angle-mutable', 'false');

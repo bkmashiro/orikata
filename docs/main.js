@@ -897,7 +897,7 @@ function X() {
 	Y.url = `data:image/svg+xml,${encodeURIComponent(Re(B.value, z.textContent || "Save"))}`, Q.setAngle("corner-mountain", H["corner-mountain"]);
 }
 function ze(e, t, n = "idle") {
-	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${J(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
+	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${J(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? "#766f64" : i, o = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
   <defs>
@@ -913,9 +913,9 @@ function ze(e, t, n = "idle") {
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
-  <path d="M88 0v148" stroke="${i}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
+  <path d="M88 0v148" stroke="${a}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
   <g filter="url(#paperNoise)">${r}</g>
-  ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${a}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${a}</text>`}
+  ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${o}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${o}</text>`}
 </svg>`;
 }
 async function Be() {
