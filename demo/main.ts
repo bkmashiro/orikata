@@ -339,9 +339,9 @@ function buildComplexDomSvg(): string {
   <rect width="340" height="220" fill="url(#complexWash)"/>
   <rect width="340" height="220" fill="url(#complexGrid)"/>
   <text x="20" y="32" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="24" fill="#1f2420">Signal garden</text>
-  <text x="244" y="31" font-family="system-ui" font-size="11" fill="#766f64">complex DOM texture</text>
+  <text x="320" y="31" text-anchor="end" font-family="system-ui" font-size="10" fill="#766f64">complex DOM</text>
   ${cards}
-  <path d="M113.33 0v220M226.67 0v220" stroke="#766f64" stroke-opacity="0.36" stroke-dasharray="7 9"/>
+  <path d="M113 0v220M227 0v220" stroke="#766f64" stroke-opacity="0.36" stroke-dasharray="7 9"/>
 </svg>`;
 }
 
@@ -390,9 +390,9 @@ async function mountStaticShowcases(): Promise<void> {
     foldOps: [
       { id: 'corner-tl', targetNodeId: ROOT_ID, childNodeId: 'corner-tl-panel', line: { a: { x: -10, y: 80 }, b: { x: 80, y: -10 } }, movingSide: 1, angleDeg: 58 },
       { id: 'corner-tr', targetNodeId: ROOT_ID, childNodeId: 'corner-tr-panel', line: { a: { x: 180, y: -10 }, b: { x: 270, y: 80 } }, movingSide: 1, angleDeg: 58 },
-      { id: 'corner-br', targetNodeId: ROOT_ID, childNodeId: 'corner-br-panel', line: { a: { x: 270, y: 180 }, b: { x: 180, y: 270 } }, movingSide: 1, angleDeg: 58 },
-      { id: 'corner-bl', targetNodeId: ROOT_ID, childNodeId: 'corner-bl-panel', line: { a: { x: 80, y: 270 }, b: { x: -10, y: 180 } }, movingSide: 1, angleDeg: 58 },
-      { id: 'square-mid-up', targetNodeId: ROOT_ID, childNodeId: 'square-top-half', line: { a: { x: 0, y: 130 }, b: { x: 260, y: 130 } }, movingSide: -1, angleDeg: -44 }
+      { id: 'square-mid-up', targetNodeId: ROOT_ID, childNodeId: 'square-bottom-half', line: { a: { x: 0, y: 130 }, b: { x: 260, y: 130 } }, movingSide: -1, angleDeg: -44 },
+      { id: 'corner-br', targetNodeId: 'square-bottom-half', childNodeId: 'corner-br-panel', line: { a: { x: 270, y: 180 }, b: { x: 180, y: 270 } }, movingSide: 1, angleDeg: 58 },
+      { id: 'corner-bl', targetNodeId: 'square-bottom-half', childNodeId: 'corner-bl-panel', line: { a: { x: 80, y: 270 }, b: { x: -10, y: 180 } }, movingSide: 1, angleDeg: 58 }
     ]
   });
   await squareRuntime.mount();
@@ -404,23 +404,31 @@ async function mountStaticShowcases(): Promise<void> {
     paper: { width: 340, height: 220 },
     snapshot: { id: 'complex-dom-graphic', width: 340, height: 220, url: svgDataUrl(buildComplexDomSvg()) },
     foldOps: [
-      { id: 'complex-left-fold', targetNodeId: ROOT_ID, childNodeId: 'complex-mid-panel', line: { a: { x: 113.33, y: 0 }, b: { x: 113.33, y: 220 } }, movingSide: 1, angleDeg: -34 },
-      { id: 'complex-right-fold', targetNodeId: 'complex-mid-panel', childNodeId: 'complex-right-panel', line: { a: { x: 226.67, y: 0 }, b: { x: 226.67, y: 220 } }, movingSide: 1, angleDeg: 38 }
+      { id: 'complex-left-fold', targetNodeId: ROOT_ID, childNodeId: 'complex-mid-panel', line: { a: { x: 113, y: 0 }, b: { x: 113, y: 220 } }, movingSide: 1, angleDeg: -34 },
+      { id: 'complex-right-fold', targetNodeId: 'complex-mid-panel', childNodeId: 'complex-right-panel', line: { a: { x: 227, y: 0 }, b: { x: 227, y: 220 } }, movingSide: 1, angleDeg: 38 }
     ]
   });
   await complexRuntime.mount();
   complexDomTargetElement.dataset.rendered = 'true';
 
   const startedAt = performance.now();
+  const quantizeAngle = (value: number) => Math.round(value * 4) / 4;
   const animate = (now: number) => {
     const t = (Math.sin((now - startedAt) / 1300) + 1) / 2;
     const ease = t * t * (3 - 2 * t);
-    const corner = 12 + ease * 54;
-    const mid = -8 - ease * 42;
-    for (const id of ['corner-tl', 'corner-tr', 'corner-br', 'corner-bl']) squareRuntime.setAngle(id, corner);
-    squareRuntime.setAngle('square-mid-up', mid);
-    complexRuntime.setAngle('complex-left-fold', -12 - ease * 34);
-    complexRuntime.setAngle('complex-right-fold', 12 + ease * 34);
+    const corner = quantizeAngle(12 + ease * 54);
+    const mid = quantizeAngle(-8 - ease * 42);
+    squareRuntime.setAngles?.([
+      { opId: 'corner-tl', angleDeg: corner },
+      { opId: 'corner-tr', angleDeg: corner },
+      { opId: 'corner-br', angleDeg: corner },
+      { opId: 'corner-bl', angleDeg: corner },
+      { opId: 'square-mid-up', angleDeg: mid }
+    ]);
+    complexRuntime.setAngles?.([
+      { opId: 'complex-left-fold', angleDeg: quantizeAngle(-12 - ease * 34) },
+      { opId: 'complex-right-fold', angleDeg: quantizeAngle(12 + ease * 34) }
+    ]);
     requestAnimationFrame(animate);
   };
   requestAnimationFrame(animate);

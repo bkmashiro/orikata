@@ -67,6 +67,31 @@ describe('static-view runtime', () => {
     runtime.setAngle('fold-right', -20);
     expect(cssTransform(host, 'right')).not.toBe(cssTransform(host, ROOT_ID));
   });
+
+  it('updates multiple fold angles in one render pass for nested animation', () => {
+    const host = document.createElement('div');
+    const nestedOps = [
+      ...foldOps,
+      {
+        id: 'fold-right-half',
+        targetNodeId: 'right',
+        childNodeId: 'right-edge',
+        line: { a: { x: 150, y: 0 }, b: { x: 150, y: 100 } },
+        movingSide: 1 as const,
+        angleDeg: 20
+      }
+    ];
+    const runtime = createOrigamiRuntime({ mode: 'static-view', host, paper, snapshot, foldOps: nestedOps });
+
+    const changed = runtime.setAngles?.([
+      { opId: 'fold-right', angleDeg: -24 },
+      { opId: 'fold-right-half', angleDeg: 36 }
+    ]);
+
+    expect(changed).toBe(true);
+    expect(host.querySelectorAll('.ori-fold-node')).toHaveLength(3);
+    expect(cssTransform(host, 'right-edge')).toContain('matrix3d(');
+  });
 });
 
 describe('baked-view runtime', () => {

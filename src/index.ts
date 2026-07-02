@@ -193,6 +193,7 @@ export interface OrigamiRuntime {
   render(): void;
   mount(): Promise<void>;
   setAngle(opId: Id, angleDeg: number): boolean;
+  setAngles?(updates: Array<{ opId: Id; angleDeg: number }>): boolean;
   setMode?(mode: 'static-view' | 'interactive-bridge'): void;
   bridgePointer?(event: { clientX: number; clientY: number; type: string }): boolean;
   dispose(): void;
@@ -943,6 +944,17 @@ function dispatchSyntheticEvent(target: HTMLElement, type: string): void {
   target.dispatchEvent(new EventCtor(type, { bubbles: true }));
 }
 
+function applyAngleUpdates(foldOps: FoldOp[], updates: Array<{ opId: Id; angleDeg: number }>): boolean {
+  let didUpdate = false;
+  for (const update of updates) {
+    const op = foldOps.find((candidate) => candidate.id === update.opId);
+    if (!op) continue;
+    op.angleDeg = update.angleDeg;
+    didUpdate = true;
+  }
+  return didUpdate;
+}
+
 class StaticOrigamiView implements OrigamiRuntime {
   readonly mode = 'static-view';
   private state: OrigamiDocumentState;
@@ -971,9 +983,11 @@ class StaticOrigamiView implements OrigamiRuntime {
   }
 
   setAngle(opId: Id, angleDeg: number): boolean {
-    const op = this.state.foldOps.find((candidate) => candidate.id === opId);
-    if (!op) return false;
-    op.angleDeg = angleDeg;
+    return this.setAngles([{ opId, angleDeg }]);
+  }
+
+  setAngles(updates: Array<{ opId: Id; angleDeg: number }>): boolean {
+    if (!applyAngleUpdates(this.state.foldOps, updates)) return false;
     this.tree = buildDerivedFoldTree(this.state);
     this.render();
     return true;
@@ -1004,6 +1018,10 @@ class BakedOrigamiView implements OrigamiRuntime {
   }
 
   setAngle(): boolean {
+    return false;
+  }
+
+  setAngles(): boolean {
     return false;
   }
 
@@ -1068,9 +1086,11 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   }
 
   setAngle(opId: Id, angleDeg: number): boolean {
-    const op = this.state.foldOps.find((candidate) => candidate.id === opId);
-    if (!op) return false;
-    op.angleDeg = angleDeg;
+    return this.setAngles([{ opId, angleDeg }]);
+  }
+
+  setAngles(updates: Array<{ opId: Id; angleDeg: number }>): boolean {
+    if (!applyAngleUpdates(this.state.foldOps, updates)) return false;
     this.tree = buildDerivedFoldTree(this.state);
     this.render();
     return true;
