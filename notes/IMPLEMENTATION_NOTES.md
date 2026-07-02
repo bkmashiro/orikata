@@ -45,19 +45,19 @@ baked-view:
 
 ## Initial implementation constraints
 
-当前是初版，为了先立住边界：
+当前是第二个几何地基版本：
 
-1. fold split 只支持轴对齐 hinge：vertical / horizontal。
-2. hit-test 暂时用源空间 polygon，不做真实 CSS 3D ray-plane 反投影。
-3. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
-4. input proxy / IME / selection / native select 暂未实现。
-5. 多层 worldMatrix 当前是 CSS transform string，后续需要换成 DOMMatrix/自有矩阵，才能做真实反投影和嵌套 transform 合成。
+1. fold split 支持任意直线切 convex polygon；凹多边形和多片拓扑暂未做完整布尔处理。
+2. `localMatrix/worldMatrix` 已升级为内部 `Mat4`，renderer 通过 `cssMatrixFromMat4()` 输出 `matrix3d()`。
+3. 多层 fold 会合成 parent world matrix 和 child local matrix。
+4. hit-test 会使用变换后的 polygon 轮廓，但仍是 2D projected polygon 命中，不是透视 ray-plane 反投影。
+5. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
+6. input proxy / IME / selection / native select 暂未实现。
 
 ## Next slices
 
-1. 把 `localMatrix/worldMatrix` 从 string 升级为内部矩阵 + CSS serializer。
-2. 实现任意线 polygon split。
-3. 实现 ray-plane hit-test 和 node local -> source local 反投影。
-4. 增加 `InteractionAdapter` registry。
-5. 做 `InputProxyAdapter`，覆盖 input/textarea/range/checkbox。
-6. 增加 Playwright Chromium smoke；之后补 Safari/Firefox。
+1. 实现 ray-plane hit-test 和 node local -> source local 反投影。
+2. 增加 `InteractionAdapter` registry。
+3. 做 `InputProxyAdapter`，覆盖 input/textarea/range/checkbox。
+4. 增加 Playwright Chromium smoke；之后补 Safari/Firefox。
+5. 评估凹多边形/多片拓扑是否需要引入 polygon clipping dependency。

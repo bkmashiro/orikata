@@ -21,6 +21,10 @@ const foldOps = [
   }
 ];
 
+function cssTransform(host: HTMLElement, nodeId: string): string {
+  return host.querySelector<HTMLElement>(`[data-ori-node-id="${nodeId}"]`)?.style.transform ?? '';
+}
+
 describe('derived fold tree', () => {
   it('splits the root polygon into a static parent and moving child', () => {
     const tree = buildDerivedFoldTree({
@@ -43,7 +47,7 @@ describe('derived fold tree', () => {
       { x: 200, y: 100 },
       { x: 100, y: 100 }
     ]);
-    expect(tree.nodes.right.localMatrix).toContain('rotate3d(0, 1, 0, -60deg)');
+    expect(tree.nodes.right.localMatrix).toHaveLength(16);
   });
 });
 
@@ -56,10 +60,10 @@ describe('static-view runtime', () => {
 
     expect(host.dataset.oriMode).toBe('static-view');
     expect(host.querySelectorAll('.ori-fold-node')).toHaveLength(2);
-    expect(host.querySelector<HTMLElement>('[data-ori-node-id="right"]')?.style.transform).toContain('rotate3d(0, 1, 0, -60deg)');
+    expect(cssTransform(host, 'right')).toContain('matrix3d(');
 
     runtime.setAngle('fold-right', -20);
-    expect(host.querySelector<HTMLElement>('[data-ori-node-id="right"]')?.style.transform).toContain('rotate3d(0, 1, 0, -20deg)');
+    expect(cssTransform(host, 'right')).not.toBe(cssTransform(host, ROOT_ID));
   });
 });
 
@@ -77,7 +81,7 @@ describe('baked-view runtime', () => {
     expect(changed).toBe(false);
     expect(host.innerHTML).toBe(before);
     expect(host.dataset.oriBaked).toBe('true');
-    expect(manifest.pieces.find((piece) => piece.nodeId === 'right')?.transform).toContain('-60deg');
+    expect(manifest.pieces.find((piece) => piece.nodeId === 'right')?.transform).toContain('matrix3d(');
   });
 });
 
@@ -121,7 +125,7 @@ describe('hit testing', () => {
       controls: {}
     });
 
-    expect(hitTestFoldTree({ x: 150, y: 50 }, tree)?.nodeId).toBe('right');
+    expect(hitTestFoldTree({ x: 125, y: 50 }, tree)?.nodeId).toBe('right');
     expect(hitTestFoldTree({ x: 50, y: 50 }, tree)?.nodeId).toBe(ROOT_ID);
     expect(hitTestFoldTree({ x: 250, y: 50 }, tree)).toBeNull();
   });

@@ -55,6 +55,19 @@ export interface OrigamiDocumentState {
 
 export type Polygon = Point2[];
 
+export type Mat4 = [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number
+];
+
+export interface Point3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface FoldNode {
   id: Id;
   parentId: Id | null;
@@ -63,8 +76,8 @@ export interface FoldNode {
   angleDeg: number;
   sourceOpId: Id | null;
   children: Id[];
-  localMatrix: string;
-  worldMatrix: string;
+  localMatrix: Mat4;
+  worldMatrix: Mat4;
   depth: number;
   valid: boolean;
 }
@@ -173,18 +186,19 @@ function rootPolygon(paper: PaperSpec): Polygon {
   ];
 }
 
-function isVertical(line: HingeLine): boolean {
-  return Math.abs(line.a.x - line.b.x) <= Math.abs(line.a.y - line.b.y);
+function signedDistanceToLine(point: Point2, line: HingeLine): number {
+  const dx = line.b.x - line.a.x;
+  const dy = line.b.y - line.a.y;
+  return dy * (point.x - line.a.x) - dx * (point.y - line.a.y);
 }
 
-function clipPolygonByAxisAlignedLine(polygon: Polygon, line: HingeLine, side: Side): Polygon {
-  const vertical = isVertical(line);
-  const c = vertical ? line.a.x : line.a.y;
-  const value = (point: Point2) => vertical ? point.x : point.y;
-  const inside = (point: Point2) => side === 1 ? value(point) >= c - 1e-9 : value(point) <= c + 1e-9;
+function clipPolygonByLine(polygon: Polygon, line: HingeLine, side: Side): Polygon {
+  const signed = (point: Point2) => signedDistanceToLine(point, line);
+  const inside = (point: Point2) => side === 1 ? signed(point) >= -1e-9 : signed(point) <= 1e-9;
   const intersect = (a: Point2, b: Point2): Point2 => {
-    const denom = value(b) - value(a);
-    const t = Math.abs(denom) < 1e-9 ? 0 : (c - value(a)) / denom;
+    const da = signed(a);
+    const db = signed(b);
+    const t = Math.abs(da - db) < 1e-9 ? 0 : da / (da - db);
     return {
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t
@@ -232,10 +246,67 @@ function roundPoint(point: Point2): Point2 {
   };
 }
 
-function axisAlignedFoldTransform(line: HingeLine, angleDeg: number): string {
-  const vertical = isVertical(line);
-  const axis = vertical ? '0, 1, 0' : '1, 0, 0';
-  return `translate3d(${line.a.x}px, ${line.a.y}px, 0px) rotate3d(${axis}, ${angleDeg}deg) translate3d(${-line.a.x}px, ${-line.a.y}px, 0px)`;
+export function mat4Identity(): Mat4 {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+
+function mat4Translation(x: number, y: number, z: number): Mat4 {
+  return [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
+}
+
+function mat4AxisRotation(axis: Point3, angleDeg: number): Mat4 {
+  const length = Math.hypot(axis.x, axis.y, axis.z) || 1;
+  const x = axis.x / length;
+  const y = axis.y / length;
+  const z = axis.z / length;
+  const radians = angleDeg * Math.PI / 180;
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  const t = 1 - c;
+  return [
+    t * x * x + c, t * x * y - s * z, t * x * z + s * y, 0,
+    t * x * y + s * z, t * y * y + c, t * y * z - s * x, 0,
+    t * x * z - s * y, t * y * z + s * x, t * z * z + c, 0,
+    0, 0, 0, 1
+  ];
+}
+
+export function mat4Multiply(a: Mat4, b: Mat4): Mat4 {
+  const out = Array.from({ length: 16 }, () => 0) as Mat4;
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 4; col += 1) {
+      out[row * 4 + col] = a[row * 4 + 0] * b[col + 0]
+        + a[row * 4 + 1] * b[col + 4]
+        + a[row * 4 + 2] * b[col + 8]
+        + a[row * 4 + 3] * b[col + 12];
+    }
+  }
+  return out.map((value) => Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(12))) as Mat4;
+}
+
+export function mat4ApplyPoint(matrix: Mat4, point: Point3): Point3 {
+  const x = matrix[0] * point.x + matrix[1] * point.y + matrix[2] * point.z + matrix[3];
+  const y = matrix[4] * point.x + matrix[5] * point.y + matrix[6] * point.z + matrix[7];
+  const z = matrix[8] * point.x + matrix[9] * point.y + matrix[10] * point.z + matrix[11];
+  const w = matrix[12] * point.x + matrix[13] * point.y + matrix[14] * point.z + matrix[15];
+  return { x: x / (w || 1), y: y / (w || 1), z: z / (w || 1) };
+}
+
+export function cssMatrixFromMat4(matrix: Mat4): string {
+  const cssOrder = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
+  return `matrix3d(${cssOrder.map((index) => formatCssNumber(matrix[index])).join(', ')})`;
+}
+
+function formatCssNumber(value: number): string {
+  return String(Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(12)));
+}
+
+function foldTransform(line: HingeLine, angleDeg: number): Mat4 {
+  const axis = { x: line.b.x - line.a.x, y: line.b.y - line.a.y, z: 0 };
+  return mat4Multiply(
+    mat4Multiply(mat4Translation(line.a.x, line.a.y, 0), mat4AxisRotation(axis, angleDeg)),
+    mat4Translation(-line.a.x, -line.a.y, 0)
+  );
 }
 
 export function buildDerivedFoldTree(documentState: OrigamiDocumentState): DerivedFoldTree {
@@ -248,8 +319,8 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       angleDeg: 0,
       sourceOpId: null,
       children: [],
-      localMatrix: 'none',
-      worldMatrix: 'none',
+      localMatrix: mat4Identity(),
+      worldMatrix: mat4Identity(),
       depth: 0,
       valid: true
     }
@@ -264,8 +335,8 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       continue;
     }
 
-    const childPolygon = clipPolygonByAxisAlignedLine(target.polygon, op.line, op.movingSide);
-    const remainingPolygon = clipPolygonByAxisAlignedLine(target.polygon, op.line, op.movingSide === 1 ? -1 : 1);
+    const childPolygon = clipPolygonByLine(target.polygon, op.line, op.movingSide);
+    const remainingPolygon = clipPolygonByLine(target.polygon, op.line, op.movingSide === 1 ? -1 : 1);
     if (childPolygon.length < 3 || remainingPolygon.length < 3) {
       invalidOps[op.id] = 'Fold line does not split target polygon';
       continue;
@@ -273,7 +344,7 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
 
     target.polygon = remainingPolygon;
     target.children.push(op.childNodeId);
-    const localMatrix = axisAlignedFoldTransform(op.line, op.angleDeg);
+    const localMatrix = foldTransform(op.line, op.angleDeg);
     nodes[op.childNodeId] = {
       id: op.childNodeId,
       parentId: target.id,
@@ -283,7 +354,7 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       sourceOpId: op.id,
       children: [],
       localMatrix,
-      worldMatrix: localMatrix,
+      worldMatrix: mat4Multiply(target.worldMatrix, localMatrix),
       depth: target.depth + 1,
       valid: true
     };
@@ -301,11 +372,21 @@ function polygonToClipPath(polygon: Polygon): string {
   return `polygon(${polygon.map((point) => `${point.x}px ${point.y}px`).join(', ')})`;
 }
 
+function pointOnSegment(point: Point2, a: Point2, b: Point2): boolean {
+  const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
+  if (Math.abs(cross) > 1e-6) return false;
+  const dot = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
+  if (dot < -1e-6) return false;
+  const lengthSq = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+  return dot <= lengthSq + 1e-6;
+}
+
 function pointInPolygon(point: Point2, polygon: Polygon): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
     const pi = polygon[i];
     const pj = polygon[j];
+    if (pointOnSegment(point, pj, pi)) return true;
     const crosses = (pi.y > point.y) !== (pj.y > point.y)
       && point.x < ((pj.x - pi.x) * (point.y - pi.y)) / (pj.y - pi.y || 1e-12) + pi.x;
     if (crosses) inside = !inside;
@@ -313,10 +394,17 @@ function pointInPolygon(point: Point2, polygon: Polygon): boolean {
   return inside;
 }
 
+function transformedPolygon(node: FoldNode): Polygon {
+  return node.polygon.map((point) => {
+    const transformed = mat4ApplyPoint(node.worldMatrix, { x: point.x, y: point.y, z: 0 });
+    return roundPoint({ x: transformed.x, y: transformed.y });
+  });
+}
+
 export function hitTestFoldTree(stagePoint: Point2, tree: DerivedFoldTree): FoldHit | null {
   for (const nodeId of [...tree.renderOrder].reverse()) {
     const node = tree.nodes[nodeId];
-    if (pointInPolygon(stagePoint, node.polygon)) {
+    if (pointInPolygon(stagePoint, transformedPolygon(node))) {
       return { nodeId, localPoint: stagePoint };
     }
   }
@@ -330,7 +418,7 @@ function piecesFromTree(tree: DerivedFoldTree, paper: PaperSpec): FoldVisualPiec
       nodeId,
       polygon: node.polygon,
       clipPath: polygonToClipPath(node.polygon),
-      transform: node.worldMatrix,
+      transform: cssMatrixFromMat4(node.worldMatrix),
       backgroundPosition: '0px 0px',
       backgroundSize: `${paper.width}px ${paper.height}px`
     } satisfies FoldVisualPiece;
