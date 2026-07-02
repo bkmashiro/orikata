@@ -501,13 +501,11 @@
       .live-card-source::after {
         content: "";
         position: absolute;
-        left: 200px;
-        top: 0;
-        width: 176px;
-        height: 0;
-        border-top: 1.4px dashed rgba(182,95,69,.42);
-        transform: rotate(55deg);
-        transform-origin: left center;
+        inset: 0;
+        background:
+          linear-gradient(90deg, transparent 74px, rgba(182,95,69,.42) 74px 76px, transparent 76px),
+          linear-gradient(90deg, transparent 149px, rgba(182,95,69,.42) 149px 151px, transparent 151px),
+          linear-gradient(90deg, transparent 224px, rgba(182,95,69,.42) 224px 226px, transparent 226px);
         pointer-events: none;
       }
       .live-card-source h3 {
@@ -524,9 +522,9 @@
       }
       .live-card-source button {
         position: absolute;
-        left: 214px;
+        left: 198px;
         top: 56px;
-        width: 66px;
+        width: 86px;
         height: 34px;
         overflow: hidden;
         border: 1px solid rgba(31,36,32,.2);
