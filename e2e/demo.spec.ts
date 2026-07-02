@@ -98,6 +98,25 @@ test('live mirror spike renders visual clones and syncs folded hover state', asy
   await expect(live.locator('.ori-live-mirror [data-fold-original-id="liveMirrorButton"]').first()).toHaveCSS('overflow', 'hidden');
 });
 
+test('static showcase demos render animated folded surfaces', async ({ page }) => {
+  await page.goto('/demo/');
+  await waitForIntro(page);
+
+  const square = page.locator('[data-static-showcase="square"]');
+  const complex = page.locator('[data-static-showcase="complex"]');
+  await expect(square).toHaveAttribute('data-rendered', 'true');
+  await expect(complex).toHaveAttribute('data-rendered', 'true');
+  await expect(square.locator('.ori-interaction-layer')).toHaveCount(0);
+  await expect(complex.locator('.ori-interaction-layer')).toHaveCount(0);
+  await expect(square.locator('[data-ori-node-id="corner-tl-panel"]')).toBeAttached();
+  await expect(square.locator('[data-ori-node-id="corner-br-panel"]')).toBeAttached();
+  await expect(complex.locator('[data-ori-node-id="complex-right-panel"]')).toBeAttached();
+  const squareCornerTransform = await square.locator('[data-ori-node-id="corner-tl-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  const complexTransform = await complex.locator('[data-ori-node-id="complex-right-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(squareCornerTransform).not.toBe('none');
+  expect(complexTransform).not.toBe('none');
+});
+
 test('example mode cards show distinct static, interactive, and baked behavior', async ({ page }) => {
   await page.goto('/demo/');
   await waitForIntro(page);

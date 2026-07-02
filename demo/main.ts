@@ -13,8 +13,10 @@ const angleDial = document.querySelector<HTMLElement>('#angleDial');
 const angleHand = document.querySelector<HTMLElement>('#angleHand');
 const creaseTools = document.querySelector<HTMLElement>('#creaseTools');
 const liveMirrorTarget = document.querySelector<HTMLElement>('#liveMirrorTarget');
+const squareFoldTarget = document.querySelector<HTMLElement>('#squareFoldTarget');
+const complexDomTarget = document.querySelector<HTMLElement>('#complexDomTarget');
 
-if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools || !liveMirrorTarget) {
+if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools || !liveMirrorTarget || !squareFoldTarget || !complexDomTarget) {
   throw new Error('Demo DOM is missing required elements');
 }
 
@@ -25,6 +27,8 @@ const angleDialElement = angleDial;
 const angleHandElement = angleHand;
 const creaseToolHost = creaseTools;
 const liveMirrorTargetElement = liveMirrorTarget;
+const squareFoldTargetElement = squareFoldTarget;
+const complexDomTargetElement = complexDomTarget;
 const targetElement = target;
 const saveButtonElement = saveBtn;
 const nameInputElement = nameInput;
@@ -280,6 +284,67 @@ function refreshSnapshotTexture(): void {
   runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
 }
 
+
+function svgDataUrl(svg: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function buildSquareCollapseSvg(): string {
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <defs>
+    <pattern id="squareAsanoha" width="40" height="34.64" patternUnits="userSpaceOnUse">
+      <path d="M20 0v34.64M0 17.32h40M0 17.32 20 0l20 17.32-20 17.32zM0 17.32 20 34.64M40 17.32 20 34.64M0 17.32 20 0M40 17.32 20 0" fill="none" stroke="#314037" stroke-opacity="0.14" stroke-width="1"/>
+    </pattern>
+    <filter id="squarePaper" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.05" numOctaves="3" seed="21" result="noise"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.1"/></feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="multiply"/>
+    </filter>
+  </defs>
+  <rect width="260" height="260" fill="#efe3cb"/>
+  <rect width="260" height="260" fill="url(#squareAsanoha)"/>
+  <g filter="url(#squarePaper)">
+    <circle cx="130" cy="126" r="52" fill="none" stroke="#1f2420" stroke-opacity="0.17" stroke-width="17"/>
+    <path d="M66 130h128M130 66v128" stroke="#1f2420" stroke-opacity="0.22" stroke-width="1.2"/>
+    <text x="130" y="125" text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="22" fill="#1f2420">四隅</text>
+    <text x="130" y="150" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#5f5a51">corner collapse</text>
+    <circle cx="54" cy="54" r="12" fill="#b65f45" fill-opacity="0.32"/>
+    <circle cx="206" cy="54" r="12" fill="#b65f45" fill-opacity="0.32"/>
+    <circle cx="206" cy="206" r="12" fill="#b65f45" fill-opacity="0.32"/>
+    <circle cx="54" cy="206" r="12" fill="#b65f45" fill-opacity="0.32"/>
+  </g>
+  <path d="M-10 80 80 -10M180 -10 270 80M270 180 180 270M80 270 -10 180" stroke="#766f64" stroke-opacity="0.42" stroke-dasharray="6 8"/>
+  <path d="M0 130h260" stroke="#2b2f2a" stroke-opacity="0.28" stroke-dasharray="7 9"/>
+</svg>`;
+}
+
+function buildComplexDomSvg(): string {
+  const cards = [
+    '<rect x="20" y="54" width="86" height="58" rx="8" fill="#f8f1e5" stroke="#2b2f2a" stroke-opacity="0.12"/><text x="34" y="78" font-family="system-ui" font-size="10" fill="#766f64">queue</text><path d="M34 94h48" stroke="#b65f45" stroke-width="5" stroke-linecap="round"/><path d="M34 104h32" stroke="#2b2f2a" stroke-opacity=".28" stroke-width="3" stroke-linecap="round"/>',
+    '<rect x="126" y="44" width="88" height="78" rx="8" fill="#f8f1e5" stroke="#2b2f2a" stroke-opacity="0.12"/><circle cx="154" cy="82" r="18" fill="none" stroke="#b65f45" stroke-width="7" stroke-opacity=".65"/><path d="M184 66v36M196 76v26" stroke="#2b2f2a" stroke-opacity=".24" stroke-width="6" stroke-linecap="round"/>',
+    '<rect x="234" y="58" width="84" height="52" rx="8" fill="#f8f1e5" stroke="#2b2f2a" stroke-opacity="0.12"/><path d="M250 92 266 76l16 10 20-22" fill="none" stroke="#b65f45" stroke-width="3"/><circle cx="250" cy="92" r="3" fill="#b65f45"/><circle cx="302" cy="64" r="3" fill="#b65f45"/>',
+    '<rect x="24" y="142" width="290" height="48" rx="9" fill="#f8f1e5" stroke="#2b2f2a" stroke-opacity="0.12"/><circle cx="50" cy="166" r="12" fill="#2b2f2a" fill-opacity=".18"/><path d="M76 157h80M76 174h54M178 157h58M178 174h106" stroke="#2b2f2a" stroke-opacity=".24" stroke-width="4" stroke-linecap="round"/>'
+  ].join('');
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="220" viewBox="0 0 340 220">
+  <defs>
+    <linearGradient id="complexWash" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#f3ead8"/><stop offset="1" stop-color="#e7d8be"/>
+    </linearGradient>
+    <pattern id="complexGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0v24" fill="none" stroke="#2b2f2a" stroke-opacity="0.045"/>
+    </pattern>
+  </defs>
+  <rect width="340" height="220" fill="url(#complexWash)"/>
+  <rect width="340" height="220" fill="url(#complexGrid)"/>
+  <text x="20" y="32" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="24" fill="#1f2420">Signal garden</text>
+  <text x="244" y="31" font-family="system-ui" font-size="11" fill="#766f64">complex DOM texture</text>
+  ${cards}
+  <path d="M113.33 0v220M226.67 0v220" stroke="#766f64" stroke-opacity="0.36" stroke-dasharray="7 9"/>
+</svg>`;
+}
+
 type ExampleMode = 'static' | 'interactive' | 'baked';
 
 function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'): string {
@@ -313,6 +378,52 @@ function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'):
   <g filter="url(#paperNoise)">${rows}</g>
   ${button}
 </svg>`;
+}
+
+
+async function mountStaticShowcases(): Promise<void> {
+  const squareRuntime = createOrigamiRuntime({
+    mode: 'static-view',
+    host: squareFoldTargetElement,
+    paper: { width: 260, height: 260 },
+    snapshot: { id: 'square-collapse', width: 260, height: 260, url: svgDataUrl(buildSquareCollapseSvg()) },
+    foldOps: [
+      { id: 'corner-tl', targetNodeId: ROOT_ID, childNodeId: 'corner-tl-panel', line: { a: { x: -10, y: 80 }, b: { x: 80, y: -10 } }, movingSide: 1, angleDeg: 58 },
+      { id: 'corner-tr', targetNodeId: ROOT_ID, childNodeId: 'corner-tr-panel', line: { a: { x: 180, y: -10 }, b: { x: 270, y: 80 } }, movingSide: 1, angleDeg: 58 },
+      { id: 'corner-br', targetNodeId: ROOT_ID, childNodeId: 'corner-br-panel', line: { a: { x: 270, y: 180 }, b: { x: 180, y: 270 } }, movingSide: 1, angleDeg: 58 },
+      { id: 'corner-bl', targetNodeId: ROOT_ID, childNodeId: 'corner-bl-panel', line: { a: { x: 80, y: 270 }, b: { x: -10, y: 180 } }, movingSide: 1, angleDeg: 58 },
+      { id: 'square-mid-up', targetNodeId: ROOT_ID, childNodeId: 'square-top-half', line: { a: { x: 0, y: 130 }, b: { x: 260, y: 130 } }, movingSide: -1, angleDeg: -44 }
+    ]
+  });
+  await squareRuntime.mount();
+  squareFoldTargetElement.dataset.rendered = 'true';
+
+  const complexRuntime = createOrigamiRuntime({
+    mode: 'static-view',
+    host: complexDomTargetElement,
+    paper: { width: 340, height: 220 },
+    snapshot: { id: 'complex-dom-graphic', width: 340, height: 220, url: svgDataUrl(buildComplexDomSvg()) },
+    foldOps: [
+      { id: 'complex-left-fold', targetNodeId: ROOT_ID, childNodeId: 'complex-mid-panel', line: { a: { x: 113.33, y: 0 }, b: { x: 113.33, y: 220 } }, movingSide: 1, angleDeg: -34 },
+      { id: 'complex-right-fold', targetNodeId: 'complex-mid-panel', childNodeId: 'complex-right-panel', line: { a: { x: 226.67, y: 0 }, b: { x: 226.67, y: 220 } }, movingSide: 1, angleDeg: 38 }
+    ]
+  });
+  await complexRuntime.mount();
+  complexDomTargetElement.dataset.rendered = 'true';
+
+  const startedAt = performance.now();
+  const animate = (now: number) => {
+    const t = (Math.sin((now - startedAt) / 1300) + 1) / 2;
+    const ease = t * t * (3 - 2 * t);
+    const corner = 12 + ease * 54;
+    const mid = -8 - ease * 42;
+    for (const id of ['corner-tl', 'corner-tr', 'corner-br', 'corner-bl']) squareRuntime.setAngle(id, corner);
+    squareRuntime.setAngle('square-mid-up', mid);
+    complexRuntime.setAngle('complex-left-fold', -12 - ease * 34);
+    complexRuntime.setAngle('complex-right-fold', 12 + ease * 34);
+    requestAnimationFrame(animate);
+  };
+  requestAnimationFrame(animate);
 }
 
 async function mountLiveMirrorSpike(): Promise<void> {
@@ -432,6 +543,7 @@ let folded = true;
 await runtime.mount();
 setSnapshotInputValue(nameInputElement.value);
 await mountLiveMirrorSpike();
+await mountStaticShowcases();
 await mountFoldedCodeExamples();
 startIntroAnimation();
 

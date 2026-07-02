@@ -714,38 +714,38 @@ function w(e) {
 }
 //#endregion
 //#region demo/main.ts
-var T = document.querySelector("#target"), E = document.querySelector("#toggle"), D = document.querySelector("#saveBtn"), O = document.querySelector("#nameInput"), k = document.querySelector("#copyInstall"), A = document.querySelector("#installCommand"), j = document.querySelector("#foldStage"), M = document.querySelector("#activeFoldName"), N = document.querySelector("#angleValue"), P = document.querySelector("#angleDial"), Ce = document.querySelector("#angleHand"), we = document.querySelector("#creaseTools"), Te = document.querySelector("#liveMirrorTarget");
-if (!T || !E || !D || !O || !k || !A || !j || !M || !N || !P || !Ce || !we || !Te) throw Error("Demo DOM is missing required elements");
-var F = j, Ee = M, De = N, I = P, Oe = Ce, ke = we, L = Te, R = T, z = D, B = O, V = k, Ae = A;
-V.addEventListener("click", async () => {
-	let e = Ae.textContent?.trim() || "npm install orikata";
+var T = document.querySelector("#target"), E = document.querySelector("#toggle"), D = document.querySelector("#saveBtn"), O = document.querySelector("#nameInput"), k = document.querySelector("#copyInstall"), A = document.querySelector("#installCommand"), j = document.querySelector("#foldStage"), M = document.querySelector("#activeFoldName"), N = document.querySelector("#angleValue"), Ce = document.querySelector("#angleDial"), we = document.querySelector("#angleHand"), Te = document.querySelector("#creaseTools"), Ee = document.querySelector("#liveMirrorTarget"), De = document.querySelector("#squareFoldTarget"), Oe = document.querySelector("#complexDomTarget");
+if (!T || !E || !D || !O || !k || !A || !j || !M || !N || !Ce || !we || !Te || !Ee || !De || !Oe) throw Error("Demo DOM is missing required elements");
+var P = j, ke = M, Ae = N, F = Ce, je = we, Me = Te, I = Ee, Ne = De, Pe = Oe, L = T, R = D, z = O, B = k, Fe = A;
+B.addEventListener("click", async () => {
+	let e = Fe.textContent?.trim() || "npm install orikata";
 	try {
 		await navigator.clipboard?.writeText(e);
 	} catch {
 		let t = document.createElement("textarea");
 		t.value = e, t.style.position = "fixed", t.style.opacity = "0", document.body.appendChild(t), t.select(), document.execCommand("copy"), t.remove();
 	}
-	V.textContent = "copied", window.setTimeout(() => {
-		V.textContent = "copy";
+	B.textContent = "copied", window.setTimeout(() => {
+		B.textContent = "copy";
 	}, 1100);
 });
-function je(e) {
-	R.dataset.inputValue = e, X();
+function Ie(e) {
+	L.dataset.inputValue = e, Y();
 }
-R.addEventListener("focusin", (e) => {
-	e.target.classList?.contains("ori-input-proxy") && (R.dataset.inputActive = "true");
-}), R.addEventListener("focusout", (e) => {
-	e.target.classList?.contains("ori-input-proxy") && delete R.dataset.inputActive;
+L.addEventListener("focusin", (e) => {
+	e.target.classList?.contains("ori-input-proxy") && (L.dataset.inputActive = "true");
+}), L.addEventListener("focusout", (e) => {
+	e.target.classList?.contains("ori-input-proxy") && delete L.dataset.inputActive;
 });
-var Me;
-z.addEventListener("click", () => {
-	window.clearTimeout(Me), z.textContent = "Saved", X(), Me = window.setTimeout(() => {
-		z.textContent = "Save", X();
+var Le;
+R.addEventListener("click", () => {
+	window.clearTimeout(Le), R.textContent = "Saved", Y(), Le = window.setTimeout(() => {
+		R.textContent = "Save", Y();
 	}, 620);
-}), B.addEventListener("input", () => {
-	je(B.value);
+}), z.addEventListener("input", () => {
+	Ie(z.value);
 });
-var Ne = [{
+var Re = [{
 	id: "center-valley",
 	targetNodeId: e,
 	childNodeId: "right-panel",
@@ -777,20 +777,20 @@ var Ne = [{
 	},
 	movingSide: 1,
 	angleDeg: 48
-}], H = {
+}], V = {
 	"center-valley": -60,
 	"corner-mountain": 48
-}, Pe = {
+}, ze = {
 	"center-valley": "center valley",
 	"corner-mountain": "corner mountain"
-}, U = "corner-mountain";
+}, H = "corner-mountain";
+function U(e, t) {
+	V[e] = Math.max(-85, Math.min(85, Math.round(t))), Q?.setAngle(e, V[e]), G(), P.dataset.activeFold = H, P.dataset.centerAngle = String(V["center-valley"]), P.dataset.cornerAngle = String(V["corner-mountain"]), Ae.textContent = `${V[H]}°`, F.setAttribute("aria-valuenow", String(V[H])), je.style.transform = `rotate(${V[H]}deg)`;
+}
 function W(e, t) {
-	H[e] = Math.max(-85, Math.min(85, Math.round(t))), Q?.setAngle(e, H[e]), K(), F.dataset.activeFold = U, F.dataset.centerAngle = String(H["center-valley"]), F.dataset.cornerAngle = String(H["corner-mountain"]), De.textContent = `${H[U]}°`, I.setAttribute("aria-valuenow", String(H[U])), Oe.style.transform = `rotate(${H[U]}deg)`;
+	for (let n of L.querySelectorAll("[data-fold-candidate], .crease-tool-layer[data-tool-id]")) (n.dataset.foldCandidate === e || n.dataset.toolId === e) && (n.dataset.state = t);
 }
-function G(e, t) {
-	for (let n of R.querySelectorAll("[data-fold-candidate], .crease-tool-layer[data-tool-id]")) (n.dataset.foldCandidate === e || n.dataset.toolId === e) && (n.dataset.state = t);
-}
-var Fe = [{
+var Be = [{
 	id: "center-valley",
 	nodeId: e,
 	guide: {
@@ -821,56 +821,56 @@ var Fe = [{
 		y2: 80
 	}
 }];
-function Ie(e, t) {
+function Ve(e, t) {
 	let n = document.createElementNS("http://www.w3.org/2000/svg", "line");
 	n.setAttribute("class", t);
 	for (let [t, r] of Object.entries(e)) n.setAttribute(t, String(r));
 	return n;
 }
-function K() {
-	ke.remove();
-	for (let e of R.querySelectorAll(":scope > .crease-tool-layer")) e.remove();
-	for (let e of Fe) {
-		let t = R.querySelector(`[data-ori-node-id="${e.nodeId}"]`);
+function G() {
+	Me.remove();
+	for (let e of L.querySelectorAll(":scope > .crease-tool-layer")) e.remove();
+	for (let e of Be) {
+		let t = L.querySelector(`[data-ori-node-id="${e.nodeId}"]`);
 		if (!t) continue;
 		let n = document.createElement("div");
-		n.className = "crease-tool-layer", n.dataset.toolNode = e.nodeId, n.dataset.toolId = e.id, n.dataset.state = e.id === U ? "selected" : "idle", n.style.transform = t.style.transform || getComputedStyle(t).transform;
+		n.className = "crease-tool-layer", n.dataset.toolNode = e.nodeId, n.dataset.toolId = e.id, n.dataset.state = e.id === H ? "selected" : "idle", n.style.transform = t.style.transform || getComputedStyle(t).transform;
 		let r = document.createElement("button");
-		r.type = "button", r.className = `crease-hotspot ${e.id === "center-valley" ? "center" : "corner"}`, r.dataset.foldCandidate = e.id, r.dataset.state = e.id === U ? "selected" : "idle", r.setAttribute("aria-label", `select ${Pe[e.id]} crease`), r.addEventListener("mouseenter", () => {
-			e.id !== U && G(e.id, "hover");
+		r.type = "button", r.className = `crease-hotspot ${e.id === "center-valley" ? "center" : "corner"}`, r.dataset.foldCandidate = e.id, r.dataset.state = e.id === H ? "selected" : "idle", r.setAttribute("aria-label", `select ${ze[e.id]} crease`), r.addEventListener("mouseenter", () => {
+			e.id !== H && W(e.id, "hover");
 		}), r.addEventListener("mouseleave", () => {
-			e.id !== U && G(e.id, "idle");
+			e.id !== H && W(e.id, "idle");
 		}), r.addEventListener("click", (t) => {
-			t.stopPropagation(), Le(e.id);
+			t.stopPropagation(), He(e.id);
 		});
 		let i = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-		i.setAttribute("class", "fold-tool-layer"), i.setAttribute("viewBox", "0 0 420 220"), i.setAttribute("aria-hidden", "true"), i.appendChild(Ie(e.guide, "candidate-guide")), i.appendChild(Ie(e.hot, "candidate-line")), n.appendChild(r), n.appendChild(i), R.appendChild(n);
+		i.setAttribute("class", "fold-tool-layer"), i.setAttribute("viewBox", "0 0 420 220"), i.setAttribute("aria-hidden", "true"), i.appendChild(Ve(e.guide, "candidate-guide")), i.appendChild(Ve(e.hot, "candidate-line")), n.appendChild(r), n.appendChild(i), L.appendChild(n);
 	}
 }
-function Le(e) {
-	U = e, Ee.textContent = Pe[e] ?? e;
-	for (let t of Fe) G(t.id, t.id === e ? "selected" : "idle");
-	W(e, H[e] ?? 0);
+function He(e) {
+	H = e, ke.textContent = ze[e] ?? e;
+	for (let t of Be) W(t.id, t.id === e ? "selected" : "idle");
+	U(e, V[e] ?? 0);
 }
-function Re(e) {
-	let t = I.getBoundingClientRect(), n = t.left + t.width / 2, r = t.top + t.height / 2, i = Math.atan2(e.clientY - r, e.clientX - n) * 180 / Math.PI;
+function Ue(e) {
+	let t = F.getBoundingClientRect(), n = t.left + t.width / 2, r = t.top + t.height / 2, i = Math.atan2(e.clientY - r, e.clientX - n) * 180 / Math.PI;
 	return Math.max(-85, Math.min(85, Math.round(i)));
 }
-function q(e) {
-	W(U, Re(e));
+function K(e) {
+	U(H, Ue(e));
 }
-I.addEventListener("pointerdown", (e) => {
-	I.setPointerCapture(e.pointerId), q(e);
-}), I.addEventListener("pointermove", (e) => {
-	I.hasPointerCapture(e.pointerId) && q(e);
-}), I.addEventListener("click", (e) => q(e)), I.addEventListener("keydown", (e) => {
-	e.key !== "ArrowLeft" && e.key !== "ArrowRight" || (e.preventDefault(), W(U, H[U] + (e.key === "ArrowRight" ? 5 : -5)));
+F.addEventListener("pointerdown", (e) => {
+	F.setPointerCapture(e.pointerId), K(e);
+}), F.addEventListener("pointermove", (e) => {
+	F.hasPointerCapture(e.pointerId) && K(e);
+}), F.addEventListener("click", (e) => K(e)), F.addEventListener("keydown", (e) => {
+	e.key !== "ArrowLeft" && e.key !== "ArrowRight" || (e.preventDefault(), U(H, V[H] + (e.key === "ArrowRight" ? 5 : -5)));
 });
-function J(e) {
+function q(e) {
 	return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function ze(e, t) {
-	let n = J(e || "\xA0"), r = J(t || "Save");
+function We(e, t) {
+	let n = q(e || "\xA0"), r = q(t || "Save");
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">
   <defs>
@@ -904,17 +904,47 @@ function ze(e, t) {
   </g>
 </svg>`;
 }
-var Y = {
+var J = {
 	id: "washi-asanoha-card",
 	width: 420,
 	height: 220,
-	url: `data:image/svg+xml,${encodeURIComponent(ze(B.value, z.textContent || "Save"))}`
+	url: `data:image/svg+xml,${encodeURIComponent(We(z.value, R.textContent || "Save"))}`
 };
-function X() {
-	Y.url = `data:image/svg+xml,${encodeURIComponent(ze(B.value, z.textContent || "Save"))}`, Q.setAngle("corner-mountain", H["corner-mountain"]);
+function Y() {
+	J.url = `data:image/svg+xml,${encodeURIComponent(We(z.value, R.textContent || "Save"))}`, Q.setAngle("corner-mountain", V["corner-mountain"]);
 }
-function Be(e, t, n = "idle") {
-	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${J(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? "#766f64" : i, o = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
+function X(e) {
+	return `data:image/svg+xml,${encodeURIComponent(e)}`;
+}
+function Ge() {
+	return "\n<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"260\" height=\"260\" viewBox=\"0 0 260 260\">\n  <defs>\n    <pattern id=\"squareAsanoha\" width=\"40\" height=\"34.64\" patternUnits=\"userSpaceOnUse\">\n      <path d=\"M20 0v34.64M0 17.32h40M0 17.32 20 0l20 17.32-20 17.32zM0 17.32 20 34.64M40 17.32 20 34.64M0 17.32 20 0M40 17.32 20 0\" fill=\"none\" stroke=\"#314037\" stroke-opacity=\"0.14\" stroke-width=\"1\"/>\n    </pattern>\n    <filter id=\"squarePaper\" x=\"-8%\" y=\"-8%\" width=\"116%\" height=\"116%\">\n      <feTurbulence type=\"fractalNoise\" baseFrequency=\"0.016 0.05\" numOctaves=\"3\" seed=\"21\" result=\"noise\"/>\n      <feComponentTransfer><feFuncA type=\"table\" tableValues=\"0 0.1\"/></feComponentTransfer>\n      <feBlend in=\"SourceGraphic\" mode=\"multiply\"/>\n    </filter>\n  </defs>\n  <rect width=\"260\" height=\"260\" fill=\"#efe3cb\"/>\n  <rect width=\"260\" height=\"260\" fill=\"url(#squareAsanoha)\"/>\n  <g filter=\"url(#squarePaper)\">\n    <circle cx=\"130\" cy=\"126\" r=\"52\" fill=\"none\" stroke=\"#1f2420\" stroke-opacity=\"0.17\" stroke-width=\"17\"/>\n    <path d=\"M66 130h128M130 66v128\" stroke=\"#1f2420\" stroke-opacity=\"0.22\" stroke-width=\"1.2\"/>\n    <text x=\"130\" y=\"125\" text-anchor=\"middle\" font-family=\"Hiragino Mincho ProN, Yu Mincho, Georgia, serif\" font-size=\"22\" fill=\"#1f2420\">四隅</text>\n    <text x=\"130\" y=\"150\" text-anchor=\"middle\" font-family=\"system-ui, sans-serif\" font-size=\"12\" fill=\"#5f5a51\">corner collapse</text>\n    <circle cx=\"54\" cy=\"54\" r=\"12\" fill=\"#b65f45\" fill-opacity=\"0.32\"/>\n    <circle cx=\"206\" cy=\"54\" r=\"12\" fill=\"#b65f45\" fill-opacity=\"0.32\"/>\n    <circle cx=\"206\" cy=\"206\" r=\"12\" fill=\"#b65f45\" fill-opacity=\"0.32\"/>\n    <circle cx=\"54\" cy=\"206\" r=\"12\" fill=\"#b65f45\" fill-opacity=\"0.32\"/>\n  </g>\n  <path d=\"M-10 80 80 -10M180 -10 270 80M270 180 180 270M80 270 -10 180\" stroke=\"#766f64\" stroke-opacity=\"0.42\" stroke-dasharray=\"6 8\"/>\n  <path d=\"M0 130h260\" stroke=\"#2b2f2a\" stroke-opacity=\"0.28\" stroke-dasharray=\"7 9\"/>\n</svg>";
+}
+function Ke() {
+	return `
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="220" viewBox="0 0 340 220">
+  <defs>
+    <linearGradient id="complexWash" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#f3ead8"/><stop offset="1" stop-color="#e7d8be"/>
+    </linearGradient>
+    <pattern id="complexGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0v24" fill="none" stroke="#2b2f2a" stroke-opacity="0.045"/>
+    </pattern>
+  </defs>
+  <rect width="340" height="220" fill="url(#complexWash)"/>
+  <rect width="340" height="220" fill="url(#complexGrid)"/>
+  <text x="20" y="32" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="24" fill="#1f2420">Signal garden</text>
+  <text x="244" y="31" font-family="system-ui" font-size="11" fill="#766f64">complex DOM texture</text>
+  ${[
+		"<rect x=\"20\" y=\"54\" width=\"86\" height=\"58\" rx=\"8\" fill=\"#f8f1e5\" stroke=\"#2b2f2a\" stroke-opacity=\"0.12\"/><text x=\"34\" y=\"78\" font-family=\"system-ui\" font-size=\"10\" fill=\"#766f64\">queue</text><path d=\"M34 94h48\" stroke=\"#b65f45\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M34 104h32\" stroke=\"#2b2f2a\" stroke-opacity=\".28\" stroke-width=\"3\" stroke-linecap=\"round\"/>",
+		"<rect x=\"126\" y=\"44\" width=\"88\" height=\"78\" rx=\"8\" fill=\"#f8f1e5\" stroke=\"#2b2f2a\" stroke-opacity=\"0.12\"/><circle cx=\"154\" cy=\"82\" r=\"18\" fill=\"none\" stroke=\"#b65f45\" stroke-width=\"7\" stroke-opacity=\".65\"/><path d=\"M184 66v36M196 76v26\" stroke=\"#2b2f2a\" stroke-opacity=\".24\" stroke-width=\"6\" stroke-linecap=\"round\"/>",
+		"<rect x=\"234\" y=\"58\" width=\"84\" height=\"52\" rx=\"8\" fill=\"#f8f1e5\" stroke=\"#2b2f2a\" stroke-opacity=\"0.12\"/><path d=\"M250 92 266 76l16 10 20-22\" fill=\"none\" stroke=\"#b65f45\" stroke-width=\"3\"/><circle cx=\"250\" cy=\"92\" r=\"3\" fill=\"#b65f45\"/><circle cx=\"302\" cy=\"64\" r=\"3\" fill=\"#b65f45\"/>",
+		"<rect x=\"24\" y=\"142\" width=\"290\" height=\"48\" rx=\"9\" fill=\"#f8f1e5\" stroke=\"#2b2f2a\" stroke-opacity=\"0.12\"/><circle cx=\"50\" cy=\"166\" r=\"12\" fill=\"#2b2f2a\" fill-opacity=\".18\"/><path d=\"M76 157h80M76 174h54M178 157h58M178 174h106\" stroke=\"#2b2f2a\" stroke-opacity=\".24\" stroke-width=\"4\" stroke-linecap=\"round\"/>"
+	].join("")}
+  <path d="M113.33 0v220M226.67 0v220" stroke="#766f64" stroke-opacity="0.36" stroke-dasharray="7 9"/>
+</svg>`;
+}
+function qe(e, t, n = "idle") {
+	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${q(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? "#766f64" : i, o = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
   <defs>
@@ -935,11 +965,174 @@ function Be(e, t, n = "idle") {
   ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${o}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${o}</text>`}
 </svg>`;
 }
-async function Ve() {
-	let t = L.querySelector(".live-card-source");
+async function Je() {
+	let t = w({
+		mode: "static-view",
+		host: Ne,
+		paper: {
+			width: 260,
+			height: 260
+		},
+		snapshot: {
+			id: "square-collapse",
+			width: 260,
+			height: 260,
+			url: X(Ge())
+		},
+		foldOps: [
+			{
+				id: "corner-tl",
+				targetNodeId: e,
+				childNodeId: "corner-tl-panel",
+				line: {
+					a: {
+						x: -10,
+						y: 80
+					},
+					b: {
+						x: 80,
+						y: -10
+					}
+				},
+				movingSide: 1,
+				angleDeg: 58
+			},
+			{
+				id: "corner-tr",
+				targetNodeId: e,
+				childNodeId: "corner-tr-panel",
+				line: {
+					a: {
+						x: 180,
+						y: -10
+					},
+					b: {
+						x: 270,
+						y: 80
+					}
+				},
+				movingSide: 1,
+				angleDeg: 58
+			},
+			{
+				id: "corner-br",
+				targetNodeId: e,
+				childNodeId: "corner-br-panel",
+				line: {
+					a: {
+						x: 270,
+						y: 180
+					},
+					b: {
+						x: 180,
+						y: 270
+					}
+				},
+				movingSide: 1,
+				angleDeg: 58
+			},
+			{
+				id: "corner-bl",
+				targetNodeId: e,
+				childNodeId: "corner-bl-panel",
+				line: {
+					a: {
+						x: 80,
+						y: 270
+					},
+					b: {
+						x: -10,
+						y: 180
+					}
+				},
+				movingSide: 1,
+				angleDeg: 58
+			},
+			{
+				id: "square-mid-up",
+				targetNodeId: e,
+				childNodeId: "square-top-half",
+				line: {
+					a: {
+						x: 0,
+						y: 130
+					},
+					b: {
+						x: 260,
+						y: 130
+					}
+				},
+				movingSide: -1,
+				angleDeg: -44
+			}
+		]
+	});
+	await t.mount(), Ne.dataset.rendered = "true";
+	let n = w({
+		mode: "static-view",
+		host: Pe,
+		paper: {
+			width: 340,
+			height: 220
+		},
+		snapshot: {
+			id: "complex-dom-graphic",
+			width: 340,
+			height: 220,
+			url: X(Ke())
+		},
+		foldOps: [{
+			id: "complex-left-fold",
+			targetNodeId: e,
+			childNodeId: "complex-mid-panel",
+			line: {
+				a: {
+					x: 113.33,
+					y: 0
+				},
+				b: {
+					x: 113.33,
+					y: 220
+				}
+			},
+			movingSide: 1,
+			angleDeg: -34
+		}, {
+			id: "complex-right-fold",
+			targetNodeId: "complex-mid-panel",
+			childNodeId: "complex-right-panel",
+			line: {
+				a: {
+					x: 226.67,
+					y: 0
+				},
+				b: {
+					x: 226.67,
+					y: 220
+				}
+			},
+			movingSide: 1,
+			angleDeg: 38
+		}]
+	});
+	await n.mount(), Pe.dataset.rendered = "true";
+	let r = performance.now(), i = (e) => {
+		let a = (Math.sin((e - r) / 1300) + 1) / 2, o = a * a * (3 - 2 * a), s = 12 + o * 54, c = -8 - o * 42;
+		for (let e of [
+			"corner-tl",
+			"corner-tr",
+			"corner-br",
+			"corner-bl"
+		]) t.setAngle(e, s);
+		t.setAngle("square-mid-up", c), n.setAngle("complex-left-fold", -12 - o * 34), n.setAngle("complex-right-fold", 12 + o * 34), requestAnimationFrame(i);
+	};
+	requestAnimationFrame(i);
+}
+async function Ye() {
+	let t = I.querySelector(".live-card-source");
 	t && (await w({
 		mode: "interactive-bridge",
-		host: L,
+		host: I,
 		sourceRoot: t,
 		paper: {
 			width: 300,
@@ -991,7 +1184,7 @@ async function Ve() {
 				active: !0
 			}
 		}
-	}).mount(), L.dataset.liveMirrorReady = "true");
+	}).mount(), I.dataset.liveMirrorReady = "true");
 }
 var Z = [{
 	id: "code-button-fold",
@@ -1010,14 +1203,14 @@ var Z = [{
 	movingSide: 1,
 	angleDeg: -45
 }];
-async function He() {
+async function Xe() {
 	let e = Array.from(document.querySelectorAll("[data-code-fold]"));
 	await Promise.all(e.map(async (e, t) => {
 		let n = e.dataset.exampleMode || "static", r = e.querySelector(".code-fold-source"), i = r?.textContent?.trim() || "", a = (r = e.dataset.bridgeStatus || "idle") => ({
 			id: `code-example-${n}-${t}`,
 			width: 248,
 			height: 148,
-			url: `data:image/svg+xml,${encodeURIComponent(Be(i, n, r))}`
+			url: `data:image/svg+xml,${encodeURIComponent(qe(i, n, r))}`
 		});
 		if (n === "interactive") {
 			let t = a(), n = new x(t), i = e.querySelector("[data-example-action]");
@@ -1074,25 +1267,25 @@ var Q = w({
 		width: 420,
 		height: 220
 	},
-	foldOps: Ne,
-	snapshotProvider: new x(Y)
+	foldOps: Re,
+	snapshotProvider: new x(J)
 }), $ = !0;
-await Q.mount(), je(B.value), await Ve(), await He(), Ue();
-function Ue() {
+await Q.mount(), Ie(z.value), await Ye(), await Je(), await Xe(), Ze();
+function Ze() {
 	let e = performance.now();
-	F.dataset.intro = "folding", delete F.dataset.toolsReady;
+	P.dataset.intro = "folding", delete P.dataset.toolsReady;
 	let t = (n) => {
 		let r = Math.min(1, (n - e) / 950), i = 1 - (1 - r) ** 3, a = Math.round(-60 + 60 * i);
-		if (H["center-valley"] = a, Q.setAngle("center-valley", a), F.dataset.centerAngle = String(a), r < 1) {
+		if (V["center-valley"] = a, Q.setAngle("center-valley", a), P.dataset.centerAngle = String(a), r < 1) {
 			requestAnimationFrame(t);
 			return;
 		}
-		H["center-valley"] = 0, Q.setAngle("center-valley", 0), F.dataset.centerAngle = "0", F.dataset.toolsReady = "true", delete F.dataset.intro, K();
+		V["center-valley"] = 0, Q.setAngle("center-valley", 0), P.dataset.centerAngle = "0", P.dataset.toolsReady = "true", delete P.dataset.intro, G();
 	};
 	requestAnimationFrame(t);
 }
 E.addEventListener("click", () => {
-	$ = !$, H["center-valley"] = 0, H["corner-mountain"] = $ ? 48 : 0, Q.setAngle("center-valley", H["center-valley"]), Q.setAngle("corner-mountain", H["corner-mountain"]), K(), W(U, H[U]);
+	$ = !$, V["center-valley"] = 0, V["corner-mountain"] = $ ? 48 : 0, Q.setAngle("center-valley", V["center-valley"]), Q.setAngle("corner-mountain", V["corner-mountain"]), G(), U(H, V[H]);
 });
 //#endregion
 
