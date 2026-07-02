@@ -913,10 +913,7 @@ function ze(e, t, n = "idle") {
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
-  <rect x="12" y="8" width="62" height="16" rx="8" fill="${i}" fill-opacity="0.13"/>
-  <text x="43" y="20" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" fill="${i}" letter-spacing="1.2">${t === "interactive" ? "bridge" : t === "baked" ? "manifest" : "static"}</text>
-  <path d="M124 0v148" stroke="#2b2f2a" stroke-opacity="0.16" stroke-dasharray="5 7"/>
-  <path d="M176 0 248 46" stroke="${i}" stroke-opacity="0.38" stroke-dasharray="4 6"/>
+  <path d="M88 0v148" stroke="${i}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
   <g filter="url(#paperNoise)">${r}</g>
   ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${a}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${a}</text>`}
 </svg>`;
@@ -980,37 +977,21 @@ async function Be() {
 	}).mount(), L.dataset.liveMirrorReady = "true");
 }
 var Z = [{
-	id: "code-center-fold",
+	id: "code-button-fold",
 	targetNodeId: e,
 	childNodeId: "code-right-panel",
 	line: {
 		a: {
-			x: 124,
+			x: 88,
 			y: 0
 		},
 		b: {
-			x: 124,
+			x: 88,
 			y: 148
 		}
 	},
 	movingSide: 1,
-	angleDeg: -16
-}, {
-	id: "code-corner-fold",
-	targetNodeId: "code-right-panel",
-	childNodeId: "code-corner-flap",
-	line: {
-		a: {
-			x: 176,
-			y: 0
-		},
-		b: {
-			x: 248,
-			y: 46
-		}
-	},
-	movingSide: 1,
-	angleDeg: 32
+	angleDeg: -45
 }];
 async function Ve() {
 	let e = Array.from(document.querySelectorAll("[data-code-fold]"));
@@ -1024,7 +1005,7 @@ async function Ve() {
 		if (n === "interactive") {
 			let t = a(), n = new b(t), i = e.querySelector("[data-example-action]");
 			i?.addEventListener("click", () => {
-				e.dataset.bridgeStatus = "clicked", t.url = a("clicked").url, o.setAngle("code-corner-fold", 32);
+				e.dataset.bridgeStatus = "clicked", t.url = a("clicked").url, o.setAngle("code-button-fold", -45);
 			});
 			let o = C({
 				mode: "interactive-bridge",
@@ -1054,7 +1035,7 @@ async function Ve() {
 					foldOps: Z
 				})
 			});
-			await t.mount(), e.dataset.bakedAngleMutable = String(t.setAngle("code-corner-fold", 0));
+			await t.mount(), e.dataset.bakedAngleMutable = String(t.setAngle("code-button-fold", 0));
 		} else await C({
 			mode: "static-view",
 			host: e,

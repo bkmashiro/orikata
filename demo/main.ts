@@ -290,7 +290,6 @@ function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'):
   }).join('');
   const accent = mode === 'interactive' ? '#b65f45' : mode === 'baked' ? '#766f64' : '#2b2f2a';
   const label = mode === 'interactive' ? (status === 'clicked' ? 'Clicked' : 'Tap') : mode === 'baked' ? 'Frozen' : 'View';
-  const badge = mode === 'interactive' ? 'bridge' : mode === 'baked' ? 'manifest' : 'static';
   const button = mode === 'interactive'
     ? `<rect x="52" y="96" width="72" height="28" fill="${accent}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${label}</text>`
     : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${accent}">${label}</text>`;
@@ -309,10 +308,7 @@ function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'):
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
-  <rect x="12" y="8" width="62" height="16" rx="8" fill="${accent}" fill-opacity="0.13"/>
-  <text x="43" y="20" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" fill="${accent}" letter-spacing="1.2">${badge}</text>
-  <path d="M124 0v148" stroke="#2b2f2a" stroke-opacity="0.16" stroke-dasharray="5 7"/>
-  <path d="M176 0 248 46" stroke="${accent}" stroke-opacity="0.38" stroke-dasharray="4 6"/>
+  <path d="M88 0v148" stroke="${accent}" stroke-opacity="0.42" stroke-width="1.4" stroke-dasharray="5 7"/>
   <g filter="url(#paperNoise)">${rows}</g>
   ${button}
 </svg>`;
@@ -353,20 +349,12 @@ async function mountLiveMirrorSpike(): Promise<void> {
 
 const codeFoldOps = [
   {
-    id: 'code-center-fold',
+    id: 'code-button-fold',
     targetNodeId: ROOT_ID,
     childNodeId: 'code-right-panel',
-    line: { a: { x: 124, y: 0 }, b: { x: 124, y: 148 } },
+    line: { a: { x: 88, y: 0 }, b: { x: 88, y: 148 } },
     movingSide: 1 as const,
-    angleDeg: -16
-  },
-  {
-    id: 'code-corner-fold',
-    targetNodeId: 'code-right-panel',
-    childNodeId: 'code-corner-flap',
-    line: { a: { x: 176, y: 0 }, b: { x: 248, y: 46 } },
-    movingSide: 1 as const,
-    angleDeg: 32
+    angleDeg: -45
   }
 ];
 
@@ -390,7 +378,7 @@ async function mountFoldedCodeExamples(): Promise<void> {
       action?.addEventListener('click', () => {
         host.dataset.bridgeStatus = 'clicked';
         interactiveSnapshot.url = snapshotFor('clicked').url;
-        interactiveRuntime.setAngle('code-corner-fold', 32);
+        interactiveRuntime.setAngle('code-button-fold', -45);
       });
       const interactiveRuntime = createOrigamiRuntime({
         mode: 'interactive-bridge',
@@ -415,7 +403,7 @@ async function mountFoldedCodeExamples(): Promise<void> {
       });
       const bakedRuntime = createOrigamiRuntime({ mode: 'baked-view', host, manifest });
       await bakedRuntime.mount();
-      host.dataset.bakedAngleMutable = String(bakedRuntime.setAngle('code-corner-fold', 0));
+      host.dataset.bakedAngleMutable = String(bakedRuntime.setAngle('code-button-fold', 0));
     } else {
       const codeRuntime = createOrigamiRuntime({
         mode: 'static-view',

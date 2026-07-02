@@ -101,12 +101,15 @@ test('example mode cards show distinct static, interactive, and baked behavior',
 
   const staticFold = page.locator('[data-example-mode="static"]');
   await expect(staticFold.locator('[data-ori-node-id="code-right-panel"]')).toBeAttached();
-  await expect(staticFold.locator('[data-ori-node-id="code-corner-flap"]')).toBeAttached();
   await expect(staticFold.locator('.code-fold-source')).toHaveCSS('font-family', /SF Mono|SFMono-Regular|ui-monospace/);
   await expect(staticFold.locator('.ori-interaction-layer')).toHaveCount(0);
+  const codePanelTransform = await staticFold.locator('[data-ori-node-id="code-right-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(codePanelTransform).not.toBe('none');
   const staticTexture = await staticFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
   expect(decodeURIComponent(staticTexture)).toContain("mode: 'static-view'");
-  expect(decodeURIComponent(staticTexture)).toContain('static');
+  expect(decodeURIComponent(staticTexture)).not.toContain('>static<');
+  expect(decodeURIComponent(staticTexture)).not.toContain('>bridge<');
+  expect(decodeURIComponent(staticTexture)).not.toContain('>manifest<');
 
   const interactiveFold = page.locator('[data-example-mode="interactive"]');
   await interactiveFold.scrollIntoViewIfNeeded();
