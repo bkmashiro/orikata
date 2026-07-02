@@ -8,6 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.build.json && vite build",
     "test": "vitest run",
+    "smoke": "playwright test",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "main": "dist/orikata.umd.cjs",
@@ -24,6 +25,7 @@
     "dist"
   ],
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "latest",
     "jsdom": "latest",
     "typescript": "latest",

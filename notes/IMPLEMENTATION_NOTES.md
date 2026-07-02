@@ -53,10 +53,10 @@ baked-view:
 4. 每个 node 派生 `projectedPolygon`；hit-test 使用 projected polygon，命中后用 fan triangulation + barycentric 映射回 source local point。
 5. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
 6. interaction bridge 有简单 adapter registry；默认 click adapters + text input proxy 已覆盖早期按钮/文本输入验证。
-7. pointer synthetic adapter 保留为可选底层能力，但产品面先不扩。
+7. Playwright Chromium smoke 覆盖 folded button click + folded text input。
+8. pointer synthetic adapter 保留为可选底层能力，但产品面先不扩。
 
 ## Next slices
 
-1. 增加 Playwright Chromium smoke：button click + text input 两条主路径。
-2. 做一个更像真实卡片的 demo，验证 folded 后按钮/输入都能操作。
-3. 评估凹多边形/多片拓扑是否真的需要；没需求前不要引入复杂 dependency。
+1. 做一个更像真实卡片的 demo，验证 folded 后按钮/输入都能操作。
+2. 评估凹多边形/多片拓扑是否真的需要；没需求前不要引入复杂 dependency。

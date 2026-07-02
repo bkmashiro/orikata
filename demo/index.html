@@ -26,6 +26,14 @@
         padding: 32px;
         box-sizing: border-box;
       }
+      .card-source input {
+        position: absolute;
+        left: 270px;
+        top: 82px;
+        width: 100px;
+        height: 30px;
+        box-sizing: border-box;
+      }
       .card-source button {
         position: absolute;
         left: 270px;
@@ -36,6 +44,7 @@
         border-radius: 999px;
       }
       #toggle { margin-top: 24px; padding: 10px 14px; border: 0; border-radius: 999px; }
+      .status { display: flex; gap: 16px; margin-top: 14px; font-size: 14px; }
       .ori-source-layer {
         opacity: 0;
         pointer-events: auto;
@@ -47,6 +56,10 @@
         background: transparent;
         z-index: 2;
       }
+      .ori-activation-layer {
+        z-index: 3;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -54,11 +67,16 @@
       <section id="target">
         <div class="card-source">
           <h1>Orikata</h1>
-          <p>Initial runtime: static-view, interactive-bridge, and baked-view.</p>
-          <button>Source button</button>
+          <p>Folded button + text input smoke.</p>
+          <input id="nameInput" type="text" value="Alice" />
+          <button id="saveBtn">Save</button>
         </div>
       </section>
       <button id="toggle">Toggle fold angle</button>
+      <div class="status">
+        <span>Clicks: <strong id="clickCount">0</strong></span>
+        <span>Value: <strong id="sourceValue">Alice</strong></span>
+      </div>
     </main>
     <script type="module" src="/demo/main.ts"></script>
   </body>

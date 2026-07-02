@@ -22,6 +22,7 @@ type OrigamiRuntimeMode = 'static-view' | 'interactive-bridge' | 'baked-view';
 npm install
 npm run dev
 npm test
+npm run smoke
 npm run build
 ```
 

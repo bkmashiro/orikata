@@ -2,8 +2,23 @@ import { ROOT_ID, StaticImageSnapshotProvider, createOrigamiRuntime } from '../s
 
 const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
+const saveBtn = document.querySelector<HTMLButtonElement>('#saveBtn');
+const nameInput = document.querySelector<HTMLInputElement>('#nameInput');
+const clickCount = document.querySelector<HTMLElement>('#clickCount');
+const sourceValue = document.querySelector<HTMLElement>('#sourceValue');
 
-if (!target || !button) throw new Error('Demo DOM is missing required elements');
+if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue) {
+  throw new Error('Demo DOM is missing required elements');
+}
+
+let clicks = 0;
+saveBtn.addEventListener('click', () => {
+  clicks += 1;
+  clickCount.textContent = String(clicks);
+});
+nameInput.addEventListener('input', () => {
+  sourceValue.textContent = nameInput.value;
+});
 
 const foldOps = [
   {
@@ -37,5 +52,5 @@ await runtime.mount();
 
 button.addEventListener('click', () => {
   folded = !folded;
-  runtime.setAngle('fold-right', folded ? -65 : 0);
+  runtime.setAngle('fold-right', folded ? -35 : 0);
 });

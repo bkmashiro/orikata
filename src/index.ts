@@ -604,10 +604,11 @@ class SourceSurface {
 }
 
 function readLocalBox(element: HTMLElement): { x: number; y: number; width: number; height: number } | null {
-  const left = parseCssPx(element.style.left);
-  const top = parseCssPx(element.style.top);
-  const width = parseCssPx(element.style.width);
-  const height = parseCssPx(element.style.height);
+  const style = getComputedStyle(element);
+  const left = parseCssPx(element.style.left || style.left);
+  const top = parseCssPx(element.style.top || style.top);
+  const width = parseCssPx(element.style.width || style.width);
+  const height = parseCssPx(element.style.height || style.height);
   if (width > 0 && height > 0) return { x: left, y: top, width, height };
 
   const rect = element.getBoundingClientRect();
@@ -804,6 +805,7 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   private readonly source: SourceSurface;
   private readonly renderer: FoldVisualRenderer;
   private readonly adapters: InteractionAdapter[];
+  private readonly interactionLayer: HTMLElement;
   private snapshot: Snapshot | null = null;
 
   constructor(private readonly options: InteractiveRuntimeOptions) {
@@ -819,14 +821,26 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     setupHost(options.host, 'interactive-bridge', this.state.camera);
     ensureLayer(options.host, 'ori-source-layer').appendChild(options.sourceRoot);
     this.renderer = new FoldVisualRenderer(ensureLayer(options.host, 'ori-visual-layer'));
-    ensureLayer(options.host, 'ori-interaction-layer');
+    this.interactionLayer = ensureLayer(options.host, 'ori-interaction-layer');
     ensureLayer(options.host, 'ori-activation-layer');
   }
+
+  private onLayerPointer = (event: PointerEvent): void => {
+    const rect = this.options.host.getBoundingClientRect();
+    this.bridgePointer({
+      clientX: event.clientX - rect.left,
+      clientY: event.clientY - rect.top,
+      type: event.type
+    });
+  };
 
   async mount(): Promise<void> {
     this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
     this.renderer.setSnapshot(this.snapshot);
     this.render();
+    this.interactionLayer.addEventListener('pointerdown', this.onLayerPointer);
+    this.interactionLayer.addEventListener('pointermove', this.onLayerPointer);
+    this.interactionLayer.addEventListener('pointerup', this.onLayerPointer);
   }
 
   render(): void {
@@ -881,6 +895,9 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   }
 
   dispose(): void {
+    this.interactionLayer.removeEventListener('pointerdown', this.onLayerPointer);
+    this.interactionLayer.removeEventListener('pointermove', this.onLayerPointer);
+    this.interactionLayer.removeEventListener('pointerup', this.onLayerPointer);
     this.source.dispose();
     this.snapshot?.revoke?.();
     this.options.host.innerHTML = '';
@@ -903,7 +920,7 @@ function ensureLayer(host: HTMLElement, className: string): HTMLElement {
   layer.style.position = 'absolute';
   layer.style.inset = '0';
   if (className === 'ori-visual-layer' || className === 'ori-activation-layer') layer.style.transformStyle = 'preserve-3d';
-  if (className === 'ori-visual-layer') layer.style.pointerEvents = 'none';
+  if (className === 'ori-visual-layer' || className === 'ori-activation-layer') layer.style.pointerEvents = 'none';
   host.appendChild(layer);
   return layer;
 }
