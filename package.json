@@ -21,7 +21,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/live-mirror.md"
   ],
   "devDependencies": {
     "@playwright/test": "^1.61.1",

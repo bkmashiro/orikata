@@ -1,80 +1,161 @@
 # Orikata
 
-Pseudo-3D origami/folding effects for DOM elements.
+Orikata is a TypeScript library for folding one DOM surface into pseudo-3D paper facets.
 
-- npm: https://www.npmjs.com/package/orikata
-- Demo: https://orikata.pages.dev/
-- GitHub: https://github.com/bkmashiro/orikata
+It gives you three runtime modes:
+
+- **`static-view`** — render a snapshot texture as folded visual pieces. Good for decorative cards, docs, replay, and read-only animation.
+- **`interactive-bridge`** — keep one real source DOM, render folded visuals, and map pointer events back to the source DOM.
+- **`baked-view`** — precompute fixed folded pieces into an immutable manifest for static/SSR-style output.
+
+Links:
+
+- npm: <https://www.npmjs.com/package/orikata>
+- Demo: <https://orikata.pages.dev/>
+- GitHub: <https://github.com/bkmashiro/orikata>
 
 ```bash
 npm install orikata
 ```
 
-## 初版架构
-
-Orikata 现在有三种 runtime mode：
-
-```ts
-type OrigamiRuntimeMode = 'static-view' | 'interactive-bridge' | 'baked-view';
-```
-
-- `static-view`：只渲染 snapshot 折片，适合展示/回放/只读动画。
-- `interactive-bridge`：真实 DOM 保留一份，视觉层用 snapshot，点击通过 hit-test 映射回 source DOM。
-- `baked-view`：角度和折线固定，预先生成 manifest；运行时只挂载固定折片，不允许 `setAngle`，适合低算力展示、SSR/静态导出、批量列表卡片。
-
-当前实现是第二个几何地基版本：支持任意直线切 convex polygon、内部 `Mat4` 矩阵模型、CSS `matrix3d()` serializer、父子 fold world matrix 合成、每个 face 的 `projectedPolygon`，以及 fan triangulation + barycentric 的 folded→source 坐标映射。交互桥已有简单 adapter registry，默认支持 button/input button/checkbox/radio、anchor click 和 text input proxy。复杂凹多边形布尔切割、透视 ray-plane 反投影、wheel/drag 等高级 adapters 暂不做。
-
-## Visual renderer strategy
-
-Orikata separates real interaction from visual rendering. The source DOM stays unique; visual output can be rendered in two ways:
-
-### `snapshot-texture` renderer
-
-Current default. Capture or provide one source snapshot, then split that texture by folded face polygons. This is the KISS path and handles controls crossed by folds correctly at the visual level, because the whole paper texture is cut into pieces. Fold/open animations update face transforms only; content changes such as `Save -> Saved` or input values should refresh/rebuild the snapshot, optionally crossfading two snapshot layers.
-
-### `live-mirror` / `dom-clone-clip` renderer
-
-Experimental. For each folded face, Orikata can create a visual-only clone of the source DOM, clip it to that face polygon, and apply the face transform via `visual: { backend: 'live-mirror' }` on `interactive-bridge`. This preserves CSS keyframes/transitions and lets pseudo states be mirrored with `data-fold-hover` / `data-fold-active`, while still keeping pointer events and real state on the single source DOM. Clones remain `pointer-events: none`; they are not independent interactive controls.
-
-Current scope is a spike: full source clone per face, duplicate `id` sanitization, basic form value mirroring, and hover/active pseudo-state sync. Large DOMs or many folds should eventually use a hybrid live-islands renderer instead of full-tree clones.
-
-Avoid attaching a whole input/button overlay to one chosen facet. Elements live in source paper coordinates; if a fold line crosses them, their visual representation must be fragmented by face.
-
-## Install / dev
-
-```bash
-npm install
-npm run dev
-npm test
-npm run smoke
-npm run build
-```
-
-## Static view
+## Quick start: static folded texture
 
 ```ts
 import { ROOT_ID, createOrigamiRuntime } from 'orikata';
 
 const runtime = createOrigamiRuntime({
   mode: 'static-view',
-  host,
+  host: document.querySelector('#fold')!,
   paper: { width: 360, height: 240 },
-  snapshot: { id: 'snap', width: 360, height: 240, url: '/card.webp' },
+  snapshot: {
+    id: 'card',
+    width: 360,
+    height: 240,
+    url: '/card-snapshot.webp'
+  },
   foldOps: [{
     id: 'fold-right',
     targetNodeId: ROOT_ID,
-    childNodeId: 'right',
+    childNodeId: 'right-panel',
     line: { a: { x: 180, y: 0 }, b: { x: 180, y: 240 } },
     movingSide: 1,
-    angleDeg: -60
+    angleDeg: -45
   }]
 });
 
-runtime.render();
-runtime.setAngle('fold-right', -30);
+await runtime.mount();
+runtime.setAngle('fold-right', -20);
 ```
 
+## Interactive bridge
+
+`interactive-bridge` keeps the original DOM as the source of truth. The visual layer is folded, but events are hit-tested through the folded geometry and routed back to source elements through adapters.
+
+```ts
+import {
+  ROOT_ID,
+  StaticImageSnapshotProvider,
+  createOrigamiRuntime
+} from 'orikata';
+
+const runtime = createOrigamiRuntime({
+  mode: 'interactive-bridge',
+  host,
+  sourceRoot,
+  paper: { width: 360, height: 240 },
+  foldOps: [{
+    id: 'fold-right',
+    targetNodeId: ROOT_ID,
+    childNodeId: 'right-panel',
+    line: { a: { x: 180, y: 0 }, b: { x: 180, y: 240 } },
+    movingSide: 1,
+    angleDeg: -45
+  }],
+  snapshotProvider: new StaticImageSnapshotProvider(snapshot)
+});
+
+await runtime.mount();
+```
+
+Default adapters currently cover simple button/anchor clicks and text-input proxying. Rich drag/wheel/native-widget behavior should be treated as custom-adapter work.
+
+## Visual backends
+
+### `snapshot` backend, default
+
+The default renderer draws one snapshot texture and clips it into folded faces. It is the most predictable and efficient path, especially for large DOMs or UIs where visual state can be refreshed by replacing the snapshot.
+
+```ts
+createOrigamiRuntime({
+  mode: 'interactive-bridge',
+  host,
+  sourceRoot,
+  paper,
+  foldOps,
+  snapshotProvider
+  // visual omitted: snapshot backend
+});
+```
+
+### `live-mirror` backend
+
+`live-mirror` is a first-class non-snapshot backend for `interactive-bridge`. It creates visual-only DOM clones per folded face, clips each clone to that face polygon, and applies the fold transform. CSS transitions and keyframe animations can keep running on the folded surface.
+
+Events still bridge to the single source DOM. The clones are presentational (`pointer-events: none`, `aria-hidden`, `inert`) and have duplicate IDs sanitized into `data-fold-original-id`.
+
+```ts
+const runtime = createOrigamiRuntime({
+  mode: 'interactive-bridge',
+  host,
+  sourceRoot,
+  paper: { width: 320, height: 160 },
+  foldOps,
+  snapshotProvider: new StaticImageSnapshotProvider({
+    id: 'live-placeholder',
+    width: 320,
+    height: 160,
+    url: ''
+  }),
+  visual: {
+    backend: 'live-mirror',
+    pseudoStates: {
+      hover: true,
+      active: true
+    }
+  }
+});
+
+await runtime.mount();
+```
+
+Use fold data attributes alongside native pseudo-classes:
+
+```css
+.card button:hover,
+.card button[data-fold-hover='true'] {
+  background: #b65f45;
+  transform: translateY(-1px) scale(1.04);
+}
+
+.card button:active,
+.card button[data-fold-active='true'] {
+  transform: scale(0.98);
+}
+```
+
+Known limits of `live-mirror`:
+
+- It clones the full source subtree per face, so large DOMs or many folds can be expensive.
+- Basic form value mirroring covers `input`, `textarea`, and `select`; complex native controls are not fully solved.
+- `iframe`, `canvas`, `video`, and other dynamic embedded content are best-effort.
+- Advanced focus, accessibility, drag, wheel, selection, and IME behavior may need custom adapters.
+- Fold-boundary seams can still appear because browser `clip-path` + CSS 3D compositing is not perfectly continuous.
+
+See [docs/live-mirror.md](docs/live-mirror.md) for detailed guidance.
+
 ## Baked view
+
+Use `baked-view` when fold lines, angles, camera, and texture are fixed ahead of time.
 
 ```ts
 import { buildBakedOrigamiManifest, createOrigamiRuntime } from 'orikata';
@@ -82,23 +163,39 @@ import { buildBakedOrigamiManifest, createOrigamiRuntime } from 'orikata';
 const manifest = buildBakedOrigamiManifest({ paper, snapshot, foldOps });
 const runtime = createOrigamiRuntime({ mode: 'baked-view', host, manifest });
 
-runtime.render();
+await runtime.mount();
 runtime.setAngle('fold-right', 0); // false: baked mode is immutable
 ```
 
-## Interactive bridge
+## Fold model
+
+A fold operation splits one convex face with a line and creates a moving child face:
 
 ```ts
-import { StaticImageSnapshotProvider, createOrigamiRuntime } from 'orikata';
-
-const runtime = createOrigamiRuntime({
-  mode: 'interactive-bridge',
-  host,
-  sourceRoot,
-  paper,
-  foldOps,
-  snapshotProvider: new StaticImageSnapshotProvider(snapshot)
-});
-
-await runtime.mount();
+{
+  id: 'fold-right',
+  targetNodeId: ROOT_ID,
+  childNodeId: 'right-panel',
+  line: { a: { x: 180, y: 0 }, b: { x: 180, y: 240 } },
+  movingSide: 1,
+  angleDeg: -45
+}
 ```
+
+Nested folds target an existing child face. If multiple fold angles change in one animation frame, prefer `runtime.setAngles?.([...])` so geometry is rebuilt once.
+
+## Development
+
+```bash
+npm install
+npm run dev
+npm run typecheck
+npm test
+npm run smoke
+npm run build
+npm pack --dry-run
+```
+
+## Status
+
+Orikata is early. The core geometry, static rendering, interactive click/input bridge, baked manifests, and live-mirror visual backend are usable. Concave polygon splitting, full native-event emulation, complex browser widgets, and accessibility-complete folded interaction are intentionally not promised yet.

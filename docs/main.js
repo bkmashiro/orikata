@@ -870,6 +870,9 @@ var InteractiveOrigamiRuntime = class {
 			type: event.type
 		});
 	};
+	onLayerPointerExit = () => {
+		this.clearLivePseudoState();
+	};
 	async mount() {
 		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
 		if (this.renderer instanceof FoldVisualRenderer) this.renderer.setSnapshot(this.snapshot);
@@ -877,6 +880,8 @@ var InteractiveOrigamiRuntime = class {
 		this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer);
 		this.interactionLayer.addEventListener("pointermove", this.onLayerPointer);
 		this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
+		this.interactionLayer.addEventListener("pointercancel", this.onLayerPointerExit);
+		this.interactionLayer.addEventListener("pointerleave", this.onLayerPointerExit);
 	}
 	render() {
 		if (!this.snapshot && this.renderer instanceof FoldVisualRenderer) return;
@@ -937,10 +942,23 @@ var InteractiveOrigamiRuntime = class {
 		});
 		if ((type === "pointerup" || type === "click") && pseudo.active) this.renderer.setPseudoState({ active: false });
 	}
+	clearLivePseudoState() {
+		if (!(this.renderer instanceof LiveMirrorRenderer)) return;
+		const pseudo = this.options.visual?.pseudoStates;
+		if (!pseudo) return;
+		this.renderer.setPseudoState({
+			hover: pseudo.hover ? false : void 0,
+			active: pseudo.active ? false : void 0,
+			focus: pseudo.focus ? false : void 0,
+			focusVisible: pseudo.focusVisible ? false : void 0
+		});
+	}
 	dispose() {
 		this.interactionLayer.removeEventListener("pointerdown", this.onLayerPointer);
 		this.interactionLayer.removeEventListener("pointermove", this.onLayerPointer);
 		this.interactionLayer.removeEventListener("pointerup", this.onLayerPointer);
+		this.interactionLayer.removeEventListener("pointercancel", this.onLayerPointerExit);
+		this.interactionLayer.removeEventListener("pointerleave", this.onLayerPointerExit);
 		this.source.dispose();
 		this.snapshot?.revoke?.();
 		this.options.host.innerHTML = "";

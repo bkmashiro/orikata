@@ -249,6 +249,9 @@ describe('interactive-bridge runtime', () => {
     const hoveredClones = host.querySelectorAll<HTMLElement>('.ori-live-mirror [data-fold-hover="true"]');
     expect(hoveredClones).toHaveLength(2);
     expect(hoveredClones[0].dataset.foldOriginalId).toBe('saveBtn');
+
+    host.querySelector<HTMLElement>('.ori-interaction-layer')?.dispatchEvent(new Event('pointerleave'));
+    expect(host.querySelectorAll<HTMLElement>('.ori-live-mirror [data-fold-hover="true"]')).toHaveLength(0);
   });
 
   it('creates a text input proxy and syncs input back to source', async () => {

@@ -526,6 +526,10 @@
         background: var(--vermilion);
         transform: translateY(-1px) scale(1.04);
       }
+      .live-card-source button:active,
+      .live-card-source button[data-fold-active="true"] {
+        transform: translateY(0) scale(.99);
+      }
       .live-shine {
         position: absolute;
         left: -42px;
@@ -684,10 +688,10 @@
             <p class="caption">Step 1 is a flat center pre-crease; step 2 folds a local corner flap on the already-defined right panel. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
           </section>
 
-          <section class="live-spike" aria-label="Live mirror experiment">
-            <h2>Live mirror spike</h2>
-            <p>Experimental non-snapshot backend: cloned visual DOM is clipped to folded faces, so CSS transition and keyframe animation can keep running on the paper. Events still bridge back to the single hidden source DOM.</p>
-            <div id="liveMirrorTarget" aria-label="Experimental folded live DOM mirror">
+          <section class="live-spike" aria-label="Live mirror backend">
+            <h2>Live mirror backend</h2>
+            <p>First-class non-snapshot backend: visual DOM clones are clipped to folded faces, so CSS transitions and keyframe animations can keep running on paper. Events still bridge back to one hidden source DOM; large or exotic DOM subtrees remain best-effort.</p>
+            <div id="liveMirrorTarget" aria-label="Folded live DOM mirror">
               <div class="live-card-source">
                 <h3>Live DOM</h3>
                 <p>Hover the folded button: this is CSS transition, not snapshot rebuild.</p>

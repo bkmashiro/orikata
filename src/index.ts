@@ -1070,6 +1070,10 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     });
   };
 
+  private onLayerPointerExit = (): void => {
+    this.clearLivePseudoState();
+  };
+
   async mount(): Promise<void> {
     this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
     if (this.renderer instanceof FoldVisualRenderer) this.renderer.setSnapshot(this.snapshot);
@@ -1077,6 +1081,8 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     this.interactionLayer.addEventListener('pointerdown', this.onLayerPointer);
     this.interactionLayer.addEventListener('pointermove', this.onLayerPointer);
     this.interactionLayer.addEventListener('pointerup', this.onLayerPointer);
+    this.interactionLayer.addEventListener('pointercancel', this.onLayerPointerExit);
+    this.interactionLayer.addEventListener('pointerleave', this.onLayerPointerExit);
   }
 
   render(): void {
@@ -1145,10 +1151,24 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     if ((type === 'pointerup' || type === 'click') && pseudo.active) this.renderer.setPseudoState({ active: false });
   }
 
+  private clearLivePseudoState(): void {
+    if (!(this.renderer instanceof LiveMirrorRenderer)) return;
+    const pseudo = this.options.visual?.pseudoStates;
+    if (!pseudo) return;
+    this.renderer.setPseudoState({
+      hover: pseudo.hover ? false : undefined,
+      active: pseudo.active ? false : undefined,
+      focus: pseudo.focus ? false : undefined,
+      focusVisible: pseudo.focusVisible ? false : undefined
+    });
+  }
+
   dispose(): void {
     this.interactionLayer.removeEventListener('pointerdown', this.onLayerPointer);
     this.interactionLayer.removeEventListener('pointermove', this.onLayerPointer);
     this.interactionLayer.removeEventListener('pointerup', this.onLayerPointer);
+    this.interactionLayer.removeEventListener('pointercancel', this.onLayerPointerExit);
+    this.interactionLayer.removeEventListener('pointerleave', this.onLayerPointerExit);
     this.source.dispose();
     this.snapshot?.revoke?.();
     this.options.host.innerHTML = '';

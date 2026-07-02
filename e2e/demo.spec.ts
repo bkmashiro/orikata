@@ -70,7 +70,7 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
   await expect(page.locator('#angleValue')).not.toHaveText('0°');
 });
 
-test('live mirror spike renders visual clones and syncs folded hover state', async ({ page }) => {
+test('live mirror backend renders visual clones and syncs folded hover state', async ({ page }) => {
   await page.goto('/demo/');
   await waitForIntro(page);
 
@@ -94,6 +94,10 @@ test('live mirror spike renders visual clones and syncs folded hover state', asy
   await page.mouse.move(visibleBox!.x + 224, visibleBox!.y + 74);
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveCSS('background-color', 'rgb(182, 95, 69)');
+  await page.mouse.move(visibleBox!.x - 24, visibleBox!.y - 24);
+  await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]')).toHaveCount(0);
+  await page.mouse.move(visibleBox!.x + 224, visibleBox!.y + 74);
+  await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
   await expect(live.locator('.ori-live-mirror .live-shine').first()).toHaveCSS('animation-name', 'live-shine');
   await expect(live.locator('.ori-live-mirror [data-fold-original-id="liveMirrorButton"]').first()).toHaveCSS('overflow', 'hidden');
 });
