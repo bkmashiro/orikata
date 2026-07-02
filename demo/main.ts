@@ -1,4 +1,4 @@
-import { ROOT_ID, StaticImageSnapshotProvider, createOrigamiRuntime } from '../src/index';
+import { ROOT_ID, StaticImageSnapshotProvider, buildBakedOrigamiManifest, createOrigamiRuntime } from '../src/index';
 
 const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
@@ -280,12 +280,20 @@ function refreshSnapshotTexture(): void {
   runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
 }
 
-function buildCodeSnapshotSvg(code: string): string {
-  const lines = code.split('\n').slice(0, 8);
+type ExampleMode = 'static' | 'interactive' | 'baked';
+
+function buildCodeSnapshotSvg(code: string, mode: ExampleMode, status = 'idle'): string {
+  const lines = code.split('\n').slice(0, mode === 'baked' ? 7 : 6);
   const rows = lines.map((line, index) => {
-    const y = 24 + index * 16;
-    return `<text x="16" y="${y}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#252922">${escapeSvgText(line)}</text>`;
+    const y = 23 + index * 14;
+    return `<text x="16" y="${y}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${escapeSvgText(line)}</text>`;
   }).join('');
+  const accent = mode === 'interactive' ? '#b65f45' : mode === 'baked' ? '#766f64' : '#2b2f2a';
+  const label = mode === 'interactive' ? (status === 'clicked' ? 'Clicked' : 'Tap') : mode === 'baked' ? 'Frozen' : 'View';
+  const badge = mode === 'interactive' ? 'bridge' : mode === 'baked' ? 'manifest' : 'static';
+  const button = mode === 'interactive'
+    ? `<rect x="52" y="96" width="72" height="28" fill="${accent}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${label}</text>`
+    : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${accent}">${label}</text>`;
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
   <defs>
@@ -301,9 +309,12 @@ function buildCodeSnapshotSvg(code: string): string {
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
+  <rect x="12" y="8" width="62" height="16" rx="8" fill="${accent}" fill-opacity="0.13"/>
+  <text x="43" y="20" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" fill="${accent}" letter-spacing="1.2">${badge}</text>
   <path d="M124 0v148" stroke="#2b2f2a" stroke-opacity="0.16" stroke-dasharray="5 7"/>
-  <path d="M176 0 248 46" stroke="#b65f45" stroke-opacity="0.34" stroke-dasharray="4 6"/>
+  <path d="M176 0 248 46" stroke="${accent}" stroke-opacity="0.38" stroke-dasharray="4 6"/>
   <g filter="url(#paperNoise)">${rows}</g>
+  ${button}
 </svg>`;
 }
 
@@ -340,41 +351,81 @@ async function mountLiveMirrorSpike(): Promise<void> {
   liveMirrorTargetElement.dataset.liveMirrorReady = 'true';
 }
 
+const codeFoldOps = [
+  {
+    id: 'code-center-fold',
+    targetNodeId: ROOT_ID,
+    childNodeId: 'code-right-panel',
+    line: { a: { x: 124, y: 0 }, b: { x: 124, y: 148 } },
+    movingSide: 1 as const,
+    angleDeg: -16
+  },
+  {
+    id: 'code-corner-fold',
+    targetNodeId: 'code-right-panel',
+    childNodeId: 'code-corner-flap',
+    line: { a: { x: 176, y: 0 }, b: { x: 248, y: 46 } },
+    movingSide: 1 as const,
+    angleDeg: 32
+  }
+];
+
 async function mountFoldedCodeExamples(): Promise<void> {
   const blocks = Array.from(document.querySelectorAll<HTMLElement>('[data-code-fold]'));
   await Promise.all(blocks.map(async (host, index) => {
+    const mode = (host.dataset.exampleMode || 'static') as ExampleMode;
     const source = host.querySelector<HTMLElement>('.code-fold-source');
     const code = source?.textContent?.trim() || '';
-    const codeRuntime = createOrigamiRuntime({
-      mode: 'static-view',
-      host,
-      paper: { width: 248, height: 148 },
-      snapshot: {
-        id: `code-example-${index}`,
-        width: 248,
-        height: 148,
-        url: `data:image/svg+xml,${encodeURIComponent(buildCodeSnapshotSvg(code))}`
-      },
-      foldOps: [
-        {
-          id: 'code-center-fold',
-          targetNodeId: ROOT_ID,
-          childNodeId: 'code-right-panel',
-          line: { a: { x: 124, y: 0 }, b: { x: 124, y: 148 } },
-          movingSide: 1,
-          angleDeg: -16
-        },
-        {
-          id: 'code-corner-fold',
-          targetNodeId: 'code-right-panel',
-          childNodeId: 'code-corner-flap',
-          line: { a: { x: 176, y: 0 }, b: { x: 248, y: 46 } },
-          movingSide: 1,
-          angleDeg: 32
-        }
-      ]
+    const snapshotFor = (status = host.dataset.bridgeStatus || 'idle') => ({
+      id: `code-example-${mode}-${index}`,
+      width: 248,
+      height: 148,
+      url: `data:image/svg+xml,${encodeURIComponent(buildCodeSnapshotSvg(code, mode, status))}`
     });
-    await codeRuntime.mount();
+
+    if (mode === 'interactive') {
+      const interactiveSnapshot = snapshotFor();
+      const snapshotProvider = new StaticImageSnapshotProvider(interactiveSnapshot);
+      const action = host.querySelector<HTMLButtonElement>('[data-example-action]');
+      action?.addEventListener('click', () => {
+        host.dataset.bridgeStatus = 'clicked';
+        interactiveSnapshot.url = snapshotFor('clicked').url;
+        interactiveRuntime.setAngle('code-corner-fold', 32);
+      });
+      const interactiveRuntime = createOrigamiRuntime({
+        mode: 'interactive-bridge',
+        host,
+        sourceRoot: source!,
+        paper: { width: 248, height: 148 },
+        foldOps: codeFoldOps,
+        snapshotProvider
+      });
+      host.addEventListener('pointerup', (event) => {
+        const rect = host.getBoundingClientRect();
+        const localX = event.clientX - rect.left;
+        const localY = event.clientY - rect.top;
+        if (localX >= 0 && localX <= 124 && localY >= 0 && localY <= 148) action?.click();
+      });
+      await interactiveRuntime.mount();
+    } else if (mode === 'baked') {
+      const manifest = buildBakedOrigamiManifest({
+        paper: { width: 248, height: 148 },
+        snapshot: snapshotFor(),
+        foldOps: codeFoldOps
+      });
+      const bakedRuntime = createOrigamiRuntime({ mode: 'baked-view', host, manifest });
+      await bakedRuntime.mount();
+      host.dataset.bakedAngleMutable = String(bakedRuntime.setAngle('code-corner-fold', 0));
+    } else {
+      const codeRuntime = createOrigamiRuntime({
+        mode: 'static-view',
+        host,
+        paper: { width: 248, height: 148 },
+        snapshot: snapshotFor(),
+        foldOps: codeFoldOps
+      });
+      await codeRuntime.mount();
+    }
     host.dataset.rendered = 'true';
   }));
 }

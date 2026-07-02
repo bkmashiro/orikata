@@ -92,18 +92,37 @@ test('live mirror spike renders visual clones and syncs folded hover state', asy
   await expect(live.locator('.ori-live-mirror .live-shine').first()).toHaveCSS('animation-name', 'live-shine');
 });
 
-test('example snippets are rendered as folded code surfaces', async ({ page }) => {
+test('example mode cards show distinct static, interactive, and baked behavior', async ({ page }) => {
   await page.goto('/demo/');
   await waitForIntro(page);
 
   await expect(page.locator('[data-code-fold]')).toHaveCount(3);
   await expect(page.locator('[data-code-fold][data-rendered="true"]')).toHaveCount(3);
-  const firstFold = page.locator('[data-code-fold]').first();
-  await expect(firstFold.locator('[data-ori-node-id="code-right-panel"]')).toBeAttached();
-  await expect(firstFold.locator('[data-ori-node-id="code-corner-flap"]')).toBeAttached();
-  await expect(firstFold.locator('.code-fold-source')).toHaveCSS('font-family', /SF Mono|SFMono-Regular|ui-monospace/);
-  const foldedCodeTexture = await firstFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
-  expect(decodeURIComponent(foldedCodeTexture)).toContain("mode: 'static-view'");
+
+  const staticFold = page.locator('[data-example-mode="static"]');
+  await expect(staticFold.locator('[data-ori-node-id="code-right-panel"]')).toBeAttached();
+  await expect(staticFold.locator('[data-ori-node-id="code-corner-flap"]')).toBeAttached();
+  await expect(staticFold.locator('.code-fold-source')).toHaveCSS('font-family', /SF Mono|SFMono-Regular|ui-monospace/);
+  await expect(staticFold.locator('.ori-interaction-layer')).toHaveCount(0);
+  const staticTexture = await staticFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
+  expect(decodeURIComponent(staticTexture)).toContain("mode: 'static-view'");
+  expect(decodeURIComponent(staticTexture)).toContain('static');
+
+  const interactiveFold = page.locator('[data-example-mode="interactive"]');
+  await interactiveFold.scrollIntoViewIfNeeded();
+  await expect(interactiveFold.locator('.ori-interaction-layer')).toHaveCount(1);
+  await expect(interactiveFold).toHaveAttribute('data-bridge-status', 'idle');
+  const interactiveBox = await interactiveFold.boundingBox();
+  expect(interactiveBox).not.toBeNull();
+  await page.mouse.click(interactiveBox!.x + 88, interactiveBox!.y + 110);
+  await expect(interactiveFold).toHaveAttribute('data-bridge-status', 'clicked');
+  await expect.poll(async () => decodeURIComponent(await interactiveFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage))).toContain('Clicked');
+
+  const bakedFold = page.locator('[data-example-mode="baked"]');
+  await expect(bakedFold).toHaveAttribute('data-baked-angle-mutable', 'false');
+  await expect(bakedFold.locator('.ori-fold-paint[data-ori-baked="true"]')).not.toHaveCount(0);
+  const bakedTexture = await bakedFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
+  expect(decodeURIComponent(bakedTexture)).toContain('manifest');
 });
 
 test('crease guides are attached to folded facets instead of a flat global overlay', async ({ page }) => {

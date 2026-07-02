@@ -343,10 +343,44 @@
         text-align: left;
       }
       .example-card {
-        min-height: 246px;
+        position: relative;
+        min-height: 292px;
         padding: 18px;
         border: 1px solid var(--line);
         background: rgba(255,255,255,.22);
+      }
+      .example-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 3px;
+        background: var(--line-strong);
+      }
+      .example-card[data-mode="static"]::before { background: rgba(31,36,32,.34); }
+      .example-card[data-mode="interactive"]::before { background: var(--vermilion); }
+      .example-card[data-mode="baked"]::before { background: rgba(118,111,100,.58); }
+      .example-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      .mode-pill {
+        padding: 3px 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        background: rgba(255,255,255,.28);
+        font-size: 10px;
+        letter-spacing: .11em;
+        text-transform: uppercase;
+      }
+      .example-signal {
+        color: var(--vermilion);
+        font-size: 11px;
+        letter-spacing: .08em;
       }
       .example-card h3 {
         margin: 0 0 10px;
@@ -383,8 +417,24 @@
         font-variant-ligatures: none;
       }
       .code-fold .ori-visual-layer { z-index: 1; }
+      .code-fold-source button {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 124px;
+        height: 148px;
+        border: 1px solid rgba(31,36,32,.2);
+        color: var(--paper);
+        background: var(--sumi);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 11px;
+      }
       .code-fold[data-rendered="true"] .code-fold-source {
         visibility: hidden;
+      }
+      .code-fold[data-example-mode="interactive"] { cursor: pointer; }
+      .code-fold[data-example-mode="baked"] .ori-fold-paint[data-ori-baked="true"] {
+        filter: saturate(.86) contrast(.98);
       }
       .code-fold .ori-fold-paint {
         box-shadow: 0 12px 32px rgba(49,42,32,.11);
@@ -593,32 +643,37 @@
           </section>
 
           <section class="examples" aria-label="Orikata examples">
-            <article class="example-card">
-              <h3>Static view</h3>
-              <p>The code itself is rendered as a folded Orikata surface.</p>
-              <div class="code-fold" data-code-fold aria-label="Folded static-view code example">
+            <article class="example-card" data-mode="static">
+              <div class="example-meta"><h3>Static view</h3><span class="mode-pill">visual only</span></div>
+              <p>Snapshot texture plus fold transforms. No hidden source DOM, no click bridge.</p>
+              <div class="code-fold" data-code-fold data-example-mode="static" aria-label="Folded static-view code example">
                 <pre class="code-fold-source"><code>createOrigamiRuntime({
   mode: 'static-view',
   host, paper, foldOps,
   snapshot
 });</code></pre>
               </div>
+              <div class="example-signal">no interaction layer</div>
             </article>
-            <article class="example-card">
-              <h3>Interactive bridge</h3>
-              <p>One source DOM; folded clicks map back to real controls.</p>
-              <div class="code-fold" data-code-fold aria-label="Folded interactive-bridge code example">
-                <pre class="code-fold-source"><code>createOrigamiRuntime({
+            <article class="example-card" data-mode="interactive">
+              <div class="example-meta"><h3>Interactive bridge</h3><span class="mode-pill">click me</span></div>
+              <p>One hidden source DOM; folded hit-tests bridge back to a real button.</p>
+              <div class="code-fold" data-code-fold data-example-mode="interactive" data-bridge-status="idle" aria-label="Folded interactive-bridge code example">
+                <div class="code-fold-source">
+                  <pre><code>createOrigamiRuntime({
   mode: 'interactive-bridge',
   host, sourceRoot,
   snapshotProvider
 });</code></pre>
+                  <button type="button" data-example-action>Tap</button>
+                </div>
               </div>
+              <div class="example-signal">folded button updates source</div>
             </article>
-            <article class="example-card">
-              <h3>Baked view</h3>
-              <p>Precompute the folded pieces and mount them cheaply.</p>
-              <div class="code-fold" data-code-fold aria-label="Folded baked-view code example">
+            <article class="example-card" data-mode="baked">
+              <div class="example-meta"><h3>Baked view</h3><span class="mode-pill">precomputed</span></div>
+              <p>Manifest pieces are mounted directly; runtime angle mutation is frozen.</p>
+              <div class="code-fold" data-code-fold data-example-mode="baked" aria-label="Folded baked-view code example">
                 <pre class="code-fold-source"><code>const manifest =
   buildBakedOrigamiManifest(doc);
 createOrigamiRuntime({
@@ -626,6 +681,7 @@ createOrigamiRuntime({
   host, manifest
 });</code></pre>
               </div>
+              <div class="example-signal">baked pieces only</div>
             </article>
           </section>
 

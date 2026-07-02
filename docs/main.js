@@ -1,92 +1,80 @@
 //#region src/index.ts
-var ROOT_ID = "root";
-function defaultCamera(paper, camera) {
+var e = "root";
+function t(e, t) {
 	return {
-		perspective: camera?.perspective ?? 900,
-		perspectiveOrigin: camera?.perspectiveOrigin ?? {
-			x: paper.width / 2,
-			y: paper.height / 2
+		perspective: t?.perspective ?? 900,
+		perspectiveOrigin: t?.perspectiveOrigin ?? {
+			x: e.width / 2,
+			y: e.height / 2
 		}
 	};
 }
-function cloneFoldOps(foldOps) {
-	return foldOps.map((op) => ({
-		...op,
+function n(e) {
+	return e.map((e) => ({
+		...e,
 		line: {
-			a: { ...op.line.a },
-			b: { ...op.line.b }
+			a: { ...e.line.a },
+			b: { ...e.line.b }
 		}
 	}));
 }
-function rootPolygon(paper) {
+function r(e) {
 	return [
 		{
 			x: 0,
 			y: 0
 		},
 		{
-			x: paper.width,
+			x: e.width,
 			y: 0
 		},
 		{
-			x: paper.width,
-			y: paper.height
+			x: e.width,
+			y: e.height
 		},
 		{
 			x: 0,
-			y: paper.height
+			y: e.height
 		}
 	];
 }
-function signedDistanceToLine(point, line) {
-	const dx = line.b.x - line.a.x;
-	return (line.b.y - line.a.y) * (point.x - line.a.x) - dx * (point.y - line.a.y);
+function i(e, t) {
+	let n = t.b.x - t.a.x;
+	return (t.b.y - t.a.y) * (e.x - t.a.x) - n * (e.y - t.a.y);
 }
-function clipPolygonByLine(polygon, line, side) {
-	const signed = (point) => signedDistanceToLine(point, line);
-	const inside = (point) => side === 1 ? signed(point) >= -1e-9 : signed(point) <= 1e-9;
-	const intersect = (a, b) => {
-		const da = signed(a);
-		const db = signed(b);
-		const t = Math.abs(da - db) < 1e-9 ? 0 : da / (da - db);
+function a(e, t, n) {
+	let r = (e) => i(e, t), a = (e) => n === 1 ? r(e) >= -1e-9 : r(e) <= 1e-9, s = (e, t) => {
+		let n = r(e), i = r(t), a = Math.abs(n - i) < 1e-9 ? 0 : n / (n - i);
 		return {
-			x: a.x + (b.x - a.x) * t,
-			y: a.y + (b.y - a.y) * t
+			x: e.x + (t.x - e.x) * a,
+			y: e.y + (t.y - e.y) * a
 		};
-	};
-	const output = [];
-	for (let index = 0; index < polygon.length; index += 1) {
-		const current = polygon[index];
-		const previous = polygon[(index + polygon.length - 1) % polygon.length];
-		const currentInside = inside(current);
-		const previousInside = inside(previous);
-		if (currentInside) {
-			if (!previousInside) output.push(intersect(previous, current));
-			output.push(current);
-		} else if (previousInside) output.push(intersect(previous, current));
+	}, c = [];
+	for (let t = 0; t < e.length; t += 1) {
+		let n = e[t], r = e[(t + e.length - 1) % e.length], i = a(n), o = a(r);
+		i ? (o || c.push(s(r, n)), c.push(n)) : o && c.push(s(r, n));
 	}
-	return dedupePolygon(output);
+	return o(c);
 }
-function dedupePolygon(polygon) {
-	const result = [];
-	for (const point of polygon) {
-		const last = result.at(-1);
-		if (!last || Math.abs(last.x - point.x) > 1e-6 || Math.abs(last.y - point.y) > 1e-6) result.push(roundPoint(point));
+function o(e) {
+	let t = [];
+	for (let n of e) {
+		let e = t.at(-1);
+		(!e || Math.abs(e.x - n.x) > 1e-6 || Math.abs(e.y - n.y) > 1e-6) && t.push(s(n));
 	}
-	if (result.length > 1) {
-		const first = result[0];
-		const last = result.at(-1);
-		if (Math.abs(first.x - last.x) < 1e-6 && Math.abs(first.y - last.y) < 1e-6) result.pop();
+	if (t.length > 1) {
+		let e = t[0], n = t.at(-1);
+		Math.abs(e.x - n.x) < 1e-6 && Math.abs(e.y - n.y) < 1e-6 && t.pop();
 	}
-	return result;
+	return t;
 }
-function roundPoint(point) {
+function s(e) {
 	return {
-		x: Math.abs(point.x) < 1e-9 ? 0 : Number(point.x.toFixed(6)),
-		y: Math.abs(point.y) < 1e-9 ? 0 : Number(point.y.toFixed(6))
+		x: Math.abs(e.x) < 1e-9 ? 0 : Number(e.x.toFixed(6)),
+		y: Math.abs(e.y) < 1e-9 ? 0 : Number(e.y.toFixed(6))
 	};
 }
-function mat4Identity() {
+function c() {
 	return [
 		1,
 		0,
@@ -106,47 +94,40 @@ function mat4Identity() {
 		1
 	];
 }
-function mat4Translation(x, y, z) {
+function l(e, t, n) {
 	return [
 		1,
 		0,
 		0,
-		x,
+		e,
 		0,
 		1,
 		0,
-		y,
+		t,
 		0,
 		0,
 		1,
-		z,
+		n,
 		0,
 		0,
 		0,
 		1
 	];
 }
-function mat4AxisRotation(axis, angleDeg) {
-	const length = Math.hypot(axis.x, axis.y, axis.z) || 1;
-	const x = axis.x / length;
-	const y = axis.y / length;
-	const z = axis.z / length;
-	const radians = angleDeg * Math.PI / 180;
-	const c = Math.cos(radians);
-	const s = Math.sin(radians);
-	const t = 1 - c;
+function u(e, t) {
+	let n = Math.hypot(e.x, e.y, e.z) || 1, r = e.x / n, i = e.y / n, a = e.z / n, o = t * Math.PI / 180, s = Math.cos(o), c = Math.sin(o), l = 1 - s;
 	return [
-		t * x * x + c,
-		t * x * y - s * z,
-		t * x * z + s * y,
+		l * r * r + s,
+		l * r * i - c * a,
+		l * r * a + c * i,
 		0,
-		t * x * y + s * z,
-		t * y * y + c,
-		t * y * z - s * x,
+		l * r * i + c * a,
+		l * i * i + s,
+		l * i * a - c * r,
 		0,
-		t * x * z - s * y,
-		t * y * z + s * x,
-		t * z * z + c,
+		l * r * a - c * i,
+		l * i * a + c * r,
+		l * a * a + s,
 		0,
 		0,
 		0,
@@ -154,23 +135,20 @@ function mat4AxisRotation(axis, angleDeg) {
 		1
 	];
 }
-function mat4Multiply(a, b) {
-	const out = Array.from({ length: 16 }, () => 0);
-	for (let row = 0; row < 4; row += 1) for (let col = 0; col < 4; col += 1) out[row * 4 + col] = a[row * 4 + 0] * b[col + 0] + a[row * 4 + 1] * b[col + 4] + a[row * 4 + 2] * b[col + 8] + a[row * 4 + 3] * b[col + 12];
-	return out.map((value) => Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(12)));
+function d(e, t) {
+	let n = Array.from({ length: 16 }, () => 0);
+	for (let r = 0; r < 4; r += 1) for (let i = 0; i < 4; i += 1) n[r * 4 + i] = e[r * 4 + 0] * t[i + 0] + e[r * 4 + 1] * t[i + 4] + e[r * 4 + 2] * t[i + 8] + e[r * 4 + 3] * t[i + 12];
+	return n.map((e) => Math.abs(e) < 1e-12 ? 0 : Number(e.toFixed(12)));
 }
-function mat4ApplyPoint(matrix, point) {
-	const x = matrix[0] * point.x + matrix[1] * point.y + matrix[2] * point.z + matrix[3];
-	const y = matrix[4] * point.x + matrix[5] * point.y + matrix[6] * point.z + matrix[7];
-	const z = matrix[8] * point.x + matrix[9] * point.y + matrix[10] * point.z + matrix[11];
-	const w = matrix[12] * point.x + matrix[13] * point.y + matrix[14] * point.z + matrix[15];
+function f(e, t) {
+	let n = e[0] * t.x + e[1] * t.y + e[2] * t.z + e[3], r = e[4] * t.x + e[5] * t.y + e[6] * t.z + e[7], i = e[8] * t.x + e[9] * t.y + e[10] * t.z + e[11], a = e[12] * t.x + e[13] * t.y + e[14] * t.z + e[15];
 	return {
-		x: x / (w || 1),
-		y: y / (w || 1),
-		z: z / (w || 1)
+		x: n / (a || 1),
+		y: r / (a || 1),
+		z: i / (a || 1)
 	};
 }
-function cssMatrixFromMat4(matrix) {
+function p(e) {
 	return `matrix3d(${[
 		0,
 		4,
@@ -188,773 +166,571 @@ function cssMatrixFromMat4(matrix) {
 		7,
 		11,
 		15
-	].map((index) => formatCssNumber(matrix[index])).join(", ")})`;
+	].map((t) => m(e[t])).join(", ")})`;
 }
-function formatCssNumber(value) {
-	return String(Math.abs(value) < 1e-12 ? 0 : Number(value.toFixed(12)));
+function m(e) {
+	return String(Math.abs(e) < 1e-12 ? 0 : Number(e.toFixed(12)));
 }
-function foldTransform(line, angleDeg) {
-	const axis = {
-		x: line.b.x - line.a.x,
-		y: line.b.y - line.a.y,
+function ee(e, t) {
+	let n = {
+		x: e.b.x - e.a.x,
+		y: e.b.y - e.a.y,
 		z: 0
 	};
-	return mat4Multiply(mat4Multiply(mat4Translation(line.a.x, line.a.y, 0), mat4AxisRotation(axis, angleDeg)), mat4Translation(-line.a.x, -line.a.y, 0));
+	return d(d(l(e.a.x, e.a.y, 0), u(n, t)), l(-e.a.x, -e.a.y, 0));
 }
-function buildDerivedFoldTree(documentState) {
-	const nodes = { [ROOT_ID]: {
-		id: ROOT_ID,
+function h(t) {
+	let n = { [e]: {
+		id: e,
 		parentId: null,
-		polygon: rootPolygon(documentState.paper),
+		polygon: r(t.paper),
 		projectedPolygon: [],
 		hinge: null,
 		angleDeg: 0,
 		sourceOpId: null,
 		children: [],
-		localMatrix: mat4Identity(),
-		worldMatrix: mat4Identity(),
+		localMatrix: c(),
+		worldMatrix: c(),
 		depth: 0,
-		valid: true
-	} };
-	const invalidOps = {};
-	for (const op of documentState.foldOps) {
-		if (op.disabled) continue;
-		const target = nodes[op.targetNodeId];
-		if (!target) {
-			invalidOps[op.id] = `Missing target node: ${op.targetNodeId}`;
+		valid: !0
+	} }, i = {};
+	for (let e of t.foldOps) {
+		if (e.disabled) continue;
+		let t = n[e.targetNodeId];
+		if (!t) {
+			i[e.id] = `Missing target node: ${e.targetNodeId}`;
 			continue;
 		}
-		const childPolygon = clipPolygonByLine(target.polygon, op.line, op.movingSide);
-		const remainingPolygon = clipPolygonByLine(target.polygon, op.line, op.movingSide === 1 ? -1 : 1);
-		if (childPolygon.length < 3 || remainingPolygon.length < 3) {
-			invalidOps[op.id] = "Fold line does not split target polygon";
+		let r = a(t.polygon, e.line, e.movingSide), o = a(t.polygon, e.line, e.movingSide === 1 ? -1 : 1);
+		if (r.length < 3 || o.length < 3) {
+			i[e.id] = "Fold line does not split target polygon";
 			continue;
 		}
-		target.polygon = remainingPolygon;
-		target.children.push(op.childNodeId);
-		const localMatrix = foldTransform(op.line, op.angleDeg);
-		nodes[op.childNodeId] = {
-			id: op.childNodeId,
-			parentId: target.id,
-			polygon: childPolygon,
+		t.polygon = o, t.children.push(e.childNodeId);
+		let s = ee(e.line, e.angleDeg);
+		n[e.childNodeId] = {
+			id: e.childNodeId,
+			parentId: t.id,
+			polygon: r,
 			projectedPolygon: [],
-			hinge: op.line,
-			angleDeg: op.angleDeg,
-			sourceOpId: op.id,
+			hinge: e.line,
+			angleDeg: e.angleDeg,
+			sourceOpId: e.id,
 			children: [],
-			localMatrix,
-			worldMatrix: mat4Multiply(target.worldMatrix, localMatrix),
-			depth: target.depth + 1,
-			valid: true
+			localMatrix: s,
+			worldMatrix: d(t.worldMatrix, s),
+			depth: t.depth + 1,
+			valid: !0
 		};
 	}
-	for (const node of Object.values(nodes)) node.projectedPolygon = transformedPolygon(node);
+	for (let e of Object.values(n)) e.projectedPolygon = ie(e);
 	return {
-		rootId: ROOT_ID,
-		nodes,
-		renderOrder: Object.values(nodes).sort((a, b) => a.depth - b.depth).map((node) => node.id),
-		invalidOps
+		rootId: e,
+		nodes: n,
+		renderOrder: Object.values(n).sort((e, t) => e.depth - t.depth).map((e) => e.id),
+		invalidOps: i
 	};
 }
-function polygonToClipPath(polygon) {
-	return `polygon(${polygon.map((point) => `${point.x}px ${point.y}px`).join(", ")})`;
+function te(e) {
+	return `polygon(${e.map((e) => `${e.x}px ${e.y}px`).join(", ")})`;
 }
-function pointOnSegment(point, a, b) {
-	const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
-	if (Math.abs(cross) > 1e-6) return false;
-	const dot = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
-	if (dot < -1e-6) return false;
-	return dot <= (b.x - a.x) ** 2 + (b.y - a.y) ** 2 + 1e-6;
+function ne(e, t, n) {
+	let r = (e.y - t.y) * (n.x - t.x) - (e.x - t.x) * (n.y - t.y);
+	if (Math.abs(r) > 1e-6) return !1;
+	let i = (e.x - t.x) * (n.x - t.x) + (e.y - t.y) * (n.y - t.y);
+	return i < -1e-6 ? !1 : i <= (n.x - t.x) ** 2 + (n.y - t.y) ** 2 + 1e-6;
 }
-function pointInPolygon(point, polygon) {
-	let inside = false;
-	for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-		const pi = polygon[i];
-		const pj = polygon[j];
-		if (pointOnSegment(point, pj, pi)) return true;
-		if (pi.y > point.y !== pj.y > point.y && point.x < (pj.x - pi.x) * (point.y - pi.y) / (pj.y - pi.y || 1e-12) + pi.x) inside = !inside;
+function re(e, t) {
+	let n = !1;
+	for (let r = 0, i = t.length - 1; r < t.length; i = r, r += 1) {
+		let a = t[r], o = t[i];
+		if (ne(e, o, a)) return !0;
+		a.y > e.y != o.y > e.y && e.x < (o.x - a.x) * (e.y - a.y) / (o.y - a.y || 1e-12) + a.x && (n = !n);
 	}
-	return inside;
+	return n;
 }
-function transformedPolygon(node) {
-	return node.polygon.map((point) => {
-		const transformed = mat4ApplyPoint(node.worldMatrix, {
-			x: point.x,
-			y: point.y,
+function ie(e) {
+	return e.polygon.map((t) => {
+		let n = f(e.worldMatrix, {
+			x: t.x,
+			y: t.y,
 			z: 0
 		});
-		return roundPoint({
-			x: transformed.x,
-			y: transformed.y
+		return s({
+			x: n.x,
+			y: n.y
 		});
 	});
 }
-function barycentric(point, a, b, c) {
-	const v0 = {
-		x: b.x - a.x,
-		y: b.y - a.y
-	};
-	const v1 = {
-		x: c.x - a.x,
-		y: c.y - a.y
-	};
-	const v2 = {
-		x: point.x - a.x,
-		y: point.y - a.y
-	};
-	const d00 = v0.x * v0.x + v0.y * v0.y;
-	const d01 = v0.x * v1.x + v0.y * v1.y;
-	const d11 = v1.x * v1.x + v1.y * v1.y;
-	const d20 = v2.x * v0.x + v2.y * v0.y;
-	const d21 = v2.x * v1.x + v2.y * v1.y;
-	const denom = d00 * d11 - d01 * d01;
-	if (Math.abs(denom) < 1e-9) return null;
-	const v = (d11 * d20 - d01 * d21) / denom;
-	const w = (d00 * d21 - d01 * d20) / denom;
+function ae(e, t, n, r) {
+	let i = {
+		x: n.x - t.x,
+		y: n.y - t.y
+	}, a = {
+		x: r.x - t.x,
+		y: r.y - t.y
+	}, o = {
+		x: e.x - t.x,
+		y: e.y - t.y
+	}, s = i.x * i.x + i.y * i.y, c = i.x * a.x + i.y * a.y, l = a.x * a.x + a.y * a.y, u = o.x * i.x + o.y * i.y, d = o.x * a.x + o.y * a.y, f = s * l - c * c;
+	if (Math.abs(f) < 1e-9) return null;
+	let p = (l * u - c * d) / f, m = (s * d - c * u) / f;
 	return [
-		1 - v - w,
-		v,
-		w
+		1 - p - m,
+		p,
+		m
 	];
 }
-function weightsInside(weights) {
-	return weights.every((value) => value >= -1e-6 && value <= 1.000001);
+function oe(e) {
+	return e.every((e) => e >= -1e-6 && e <= 1.000001);
 }
-function mapProjectedPointToSource(point, node) {
-	const projected = node.projectedPolygon.length > 0 ? node.projectedPolygon : transformedPolygon(node);
-	for (let index = 1; index < projected.length - 1; index += 1) {
-		const weights = barycentric(point, projected[0], projected[index], projected[index + 1]);
-		if (!weights || !weightsInside(weights)) continue;
-		const sourceA = node.polygon[0];
-		const sourceB = node.polygon[index];
-		const sourceC = node.polygon[index + 1];
+function se(e, t) {
+	let n = t.projectedPolygon.length > 0 ? t.projectedPolygon : ie(t);
+	for (let r = 1; r < n.length - 1; r += 1) {
+		let i = ae(e, n[0], n[r], n[r + 1]);
+		if (!i || !oe(i)) continue;
+		let a = t.polygon[0], o = t.polygon[r], s = t.polygon[r + 1];
 		return {
-			x: sourceA.x * weights[0] + sourceB.x * weights[1] + sourceC.x * weights[2],
-			y: sourceA.y * weights[0] + sourceB.y * weights[1] + sourceC.y * weights[2]
+			x: a.x * i[0] + o.x * i[1] + s.x * i[2],
+			y: a.y * i[0] + o.y * i[1] + s.y * i[2]
 		};
 	}
-	return point;
+	return e;
 }
-function hitTestFoldTree(stagePoint, tree) {
-	for (const nodeId of [...tree.renderOrder].reverse()) {
-		const node = tree.nodes[nodeId];
-		if (pointInPolygon(stagePoint, node.projectedPolygon)) return {
-			nodeId,
-			localPoint: mapProjectedPointToSource(stagePoint, node)
+function ce(e, t) {
+	for (let n of [...t.renderOrder].reverse()) {
+		let r = t.nodes[n];
+		if (re(e, r.projectedPolygon)) return {
+			nodeId: n,
+			localPoint: se(e, r)
 		};
 	}
 	return null;
 }
-function piecesFromTree(tree, paper) {
-	return tree.renderOrder.map((nodeId) => {
-		const node = tree.nodes[nodeId];
+function g(e, t) {
+	return e.renderOrder.map((n) => {
+		let r = e.nodes[n];
 		return {
-			nodeId,
-			polygon: node.polygon,
-			clipPath: polygonToClipPath(node.polygon),
-			transform: cssMatrixFromMat4(node.worldMatrix),
+			nodeId: n,
+			polygon: r.polygon,
+			clipPath: te(r.polygon),
+			transform: p(r.worldMatrix),
 			backgroundPosition: "0px 0px",
-			backgroundSize: `${paper.width}px ${paper.height}px`
+			backgroundSize: `${t.width}px ${t.height}px`
 		};
 	});
 }
-var FoldVisualRenderer = class {
+function le(e) {
+	let r = t(e.paper, e.camera), i = h({
+		paper: e.paper,
+		camera: r,
+		foldOps: n(e.foldOps),
+		controls: {}
+	});
+	return {
+		mode: "baked-view",
+		paper: e.paper,
+		camera: r,
+		snapshot: e.snapshot,
+		pieces: g(i, e.paper)
+	};
+}
+var _ = class {
 	rootElement;
 	snapshot = null;
-	constructor(rootElement) {
-		this.rootElement = rootElement;
+	constructor(e) {
+		this.rootElement = e;
 	}
-	setSnapshot(snapshot) {
-		this.snapshot?.revoke?.();
-		this.snapshot = snapshot;
+	setSnapshot(e) {
+		this.snapshot?.revoke?.(), this.snapshot = e;
 	}
-	renderPieces(pieces, paper, baked) {
-		if (!this.snapshot) return;
-		this.rootElement.innerHTML = "";
-		this.rootElement.style.position = "relative";
-		this.rootElement.style.width = `${paper.width}px`;
-		this.rootElement.style.height = `${paper.height}px`;
-		this.rootElement.style.transformStyle = "preserve-3d";
-		for (const piece of pieces) {
-			const node = document.createElement("div");
-			node.className = "ori-fold-node";
-			node.dataset.oriNodeId = piece.nodeId;
-			node.style.position = "absolute";
-			node.style.inset = "0";
-			node.style.transformOrigin = "0 0";
-			node.style.transformStyle = "preserve-3d";
-			node.style.pointerEvents = "none";
-			node.style.transform = piece.transform;
-			const paint = document.createElement("div");
-			paint.className = "ori-fold-paint";
-			paint.style.position = "absolute";
-			paint.style.inset = "0";
-			paint.style.pointerEvents = "none";
-			paint.style.backfaceVisibility = "visible";
-			paint.style.backgroundImage = `url("${this.snapshot.url}")`;
-			paint.style.backgroundPosition = piece.backgroundPosition;
-			paint.style.backgroundSize = piece.backgroundSize;
-			paint.style.backgroundRepeat = "no-repeat";
-			paint.style.clipPath = piece.clipPath;
-			paint.dataset.oriBaked = String(baked);
-			node.appendChild(paint);
-			this.rootElement.appendChild(node);
+	renderPieces(e, t, n) {
+		if (this.snapshot) {
+			this.rootElement.innerHTML = "", this.rootElement.style.position = "relative", this.rootElement.style.width = `${t.width}px`, this.rootElement.style.height = `${t.height}px`, this.rootElement.style.transformStyle = "preserve-3d";
+			for (let t of e) {
+				let e = document.createElement("div");
+				e.className = "ori-fold-node", e.dataset.oriNodeId = t.nodeId, e.style.position = "absolute", e.style.inset = "0", e.style.transformOrigin = "0 0", e.style.transformStyle = "preserve-3d", e.style.pointerEvents = "none", e.style.transform = t.transform;
+				let r = document.createElement("div");
+				r.className = "ori-fold-paint", r.style.position = "absolute", r.style.inset = "0", r.style.pointerEvents = "none", r.style.backfaceVisibility = "visible", r.style.backgroundImage = `url("${this.snapshot.url}")`, r.style.backgroundPosition = t.backgroundPosition, r.style.backgroundSize = t.backgroundSize, r.style.backgroundRepeat = "no-repeat", r.style.clipPath = t.clipPath, r.dataset.oriBaked = String(n), e.appendChild(r), this.rootElement.appendChild(e);
+			}
 		}
 	}
-};
-var FoldElementKeyRegistry = class {
+}, ue = class {
 	nextId = 1;
 	keyByElement = /* @__PURE__ */ new WeakMap();
-	assign(root) {
-		this.ensureKey(root);
-		const elements = root.querySelectorAll("*");
-		for (const element of elements) this.ensureKey(element);
+	assign(e) {
+		this.ensureKey(e);
+		let t = e.querySelectorAll("*");
+		for (let e of t) this.ensureKey(e);
 	}
-	ensureKey(element) {
-		const existing = this.keyByElement.get(element) ?? element.dataset.foldKey;
-		if (existing) {
-			this.keyByElement.set(element, existing);
-			element.dataset.foldKey = existing;
-			return existing;
-		}
-		const key = `fold_el_${this.nextId++}`;
-		this.keyByElement.set(element, key);
-		element.dataset.foldKey = key;
-		return key;
+	ensureKey(e) {
+		let t = this.keyByElement.get(e) ?? e.dataset.foldKey;
+		if (t) return this.keyByElement.set(e, t), e.dataset.foldKey = t, t;
+		let n = `fold_el_${this.nextId++}`;
+		return this.keyByElement.set(e, n), e.dataset.foldKey = n, n;
 	}
-	getKey(element) {
-		return this.keyByElement.get(element) ?? element.dataset.foldKey;
+	getKey(e) {
+		return this.keyByElement.get(e) ?? e.dataset.foldKey;
 	}
-};
-var LiveMirrorRenderer = class {
+}, v = class {
 	sourceRoot;
 	keyRegistry;
 	rootElement;
 	fragments = /* @__PURE__ */ new Map();
-	constructor(rootElement, sourceRoot, keyRegistry) {
-		this.sourceRoot = sourceRoot;
-		this.keyRegistry = keyRegistry;
-		this.rootElement = rootElement;
+	constructor(e, t, n) {
+		this.sourceRoot = t, this.keyRegistry = n, this.rootElement = e;
 	}
-	renderPieces(pieces, paper) {
-		this.keyRegistry.assign(this.sourceRoot);
-		this.rootElement.style.position = "relative";
-		this.rootElement.style.width = `${paper.width}px`;
-		this.rootElement.style.height = `${paper.height}px`;
-		this.rootElement.style.transformStyle = "preserve-3d";
-		const seen = /* @__PURE__ */ new Set();
-		for (const piece of pieces) {
-			seen.add(piece.nodeId);
-			const dom = this.ensureFragment(piece.nodeId);
-			dom.fragmentEl.dataset.oriNodeId = piece.nodeId;
-			dom.fragmentEl.style.transform = piece.transform;
-			dom.clipEl.style.clipPath = piece.clipPath;
-			this.rootElement.appendChild(dom.fragmentEl);
+	renderPieces(e, t) {
+		this.keyRegistry.assign(this.sourceRoot), this.rootElement.style.position = "relative", this.rootElement.style.width = `${t.width}px`, this.rootElement.style.height = `${t.height}px`, this.rootElement.style.transformStyle = "preserve-3d";
+		let n = /* @__PURE__ */ new Set();
+		for (let t of e) {
+			n.add(t.nodeId);
+			let e = this.ensureFragment(t.nodeId);
+			e.fragmentEl.dataset.oriNodeId = t.nodeId, e.fragmentEl.style.transform = t.transform, e.clipEl.style.clipPath = t.clipPath, this.rootElement.appendChild(e.fragmentEl);
 		}
-		for (const [id, dom] of this.fragments) if (!seen.has(id)) {
-			dom.fragmentEl.remove();
-			this.fragments.delete(id);
-		}
+		for (let [e, t] of this.fragments) n.has(e) || (t.fragmentEl.remove(), this.fragments.delete(e));
 	}
 	syncSourceMutation() {
-		for (const [id, dom] of this.fragments) {
-			const mirror = this.createMirrorRoot();
-			dom.mirrorRoot.replaceWith(mirror.root);
-			dom.mirrorRoot = mirror.root;
-			dom.keyToCloneEl = mirror.map;
-			this.fragments.set(id, dom);
+		for (let [e, t] of this.fragments) {
+			let n = this.createMirrorRoot();
+			t.mirrorRoot.replaceWith(n.root), t.mirrorRoot = n.root, t.keyToCloneEl = n.map, this.fragments.set(e, t);
 		}
 	}
-	setPseudoState(params) {
-		for (const dom of this.fragments.values()) {
-			for (const element of dom.keyToCloneEl.values()) {
-				if (params.hover !== void 0) delete element.dataset.foldHover;
-				if (params.active !== void 0) delete element.dataset.foldActive;
-				if (params.focus !== void 0) delete element.dataset.foldFocus;
-				if (params.focusVisible !== void 0) delete element.dataset.foldFocusVisible;
-			}
-			if (!params.key) continue;
-			const clone = dom.keyToCloneEl.get(params.key);
-			if (!clone) continue;
-			if (params.hover) clone.dataset.foldHover = "true";
-			if (params.active) clone.dataset.foldActive = "true";
-			if (params.focus) clone.dataset.foldFocus = "true";
-			if (params.focusVisible) clone.dataset.foldFocusVisible = "true";
+	setPseudoState(e) {
+		for (let t of this.fragments.values()) {
+			for (let n of t.keyToCloneEl.values()) e.hover !== void 0 && delete n.dataset.foldHover, e.active !== void 0 && delete n.dataset.foldActive, e.focus !== void 0 && delete n.dataset.foldFocus, e.focusVisible !== void 0 && delete n.dataset.foldFocusVisible;
+			if (!e.key) continue;
+			let n = t.keyToCloneEl.get(e.key);
+			n && (e.hover && (n.dataset.foldHover = "true"), e.active && (n.dataset.foldActive = "true"), e.focus && (n.dataset.foldFocus = "true"), e.focusVisible && (n.dataset.foldFocusVisible = "true"));
 		}
 	}
 	mirrorFormValues() {
-		const controls = this.sourceRoot.querySelectorAll("input, textarea, select");
-		for (const sourceControl of controls) {
-			const key = this.keyRegistry.getKey(sourceControl);
-			if (!key) continue;
-			for (const dom of this.fragments.values()) {
-				const clone = dom.keyToCloneEl.get(key);
-				if (clone instanceof HTMLInputElement && sourceControl instanceof HTMLInputElement) {
-					clone.value = sourceControl.value;
-					clone.checked = sourceControl.checked;
-				} else if (clone instanceof HTMLTextAreaElement && sourceControl instanceof HTMLTextAreaElement) clone.value = sourceControl.value;
-				else if (clone instanceof HTMLSelectElement && sourceControl instanceof HTMLSelectElement) clone.selectedIndex = sourceControl.selectedIndex;
+		let e = this.sourceRoot.querySelectorAll("input, textarea, select");
+		for (let t of e) {
+			let e = this.keyRegistry.getKey(t);
+			if (e) for (let n of this.fragments.values()) {
+				let r = n.keyToCloneEl.get(e);
+				r instanceof HTMLInputElement && t instanceof HTMLInputElement ? (r.value = t.value, r.checked = t.checked) : r instanceof HTMLTextAreaElement && t instanceof HTMLTextAreaElement ? r.value = t.value : r instanceof HTMLSelectElement && t instanceof HTMLSelectElement && (r.selectedIndex = t.selectedIndex);
 			}
 		}
 	}
-	ensureFragment(id) {
-		const existing = this.fragments.get(id);
-		if (existing) return existing;
-		const fragmentEl = document.createElement("div");
-		fragmentEl.className = "ori-live-fragment ori-fold-node";
-		fragmentEl.style.position = "absolute";
-		fragmentEl.style.inset = "0";
-		fragmentEl.style.transformOrigin = "0 0";
-		fragmentEl.style.transformStyle = "preserve-3d";
-		fragmentEl.style.pointerEvents = "none";
-		fragmentEl.style.overflow = "visible";
-		const clipEl = document.createElement("div");
-		clipEl.className = "ori-live-clip";
-		clipEl.style.position = "absolute";
-		clipEl.style.inset = "0";
-		clipEl.style.pointerEvents = "none";
-		clipEl.style.backfaceVisibility = "visible";
-		const mirror = this.createMirrorRoot();
-		clipEl.appendChild(mirror.root);
-		fragmentEl.appendChild(clipEl);
-		const dom = {
-			fragmentEl,
-			clipEl,
-			mirrorRoot: mirror.root,
-			keyToCloneEl: mirror.map
+	ensureFragment(e) {
+		let t = this.fragments.get(e);
+		if (t) return t;
+		let n = document.createElement("div");
+		n.className = "ori-live-fragment ori-fold-node", n.style.position = "absolute", n.style.inset = "0", n.style.transformOrigin = "0 0", n.style.transformStyle = "preserve-3d", n.style.pointerEvents = "none", n.style.overflow = "visible";
+		let r = document.createElement("div");
+		r.className = "ori-live-clip", r.style.position = "absolute", r.style.inset = "0", r.style.pointerEvents = "none", r.style.backfaceVisibility = "visible";
+		let i = this.createMirrorRoot();
+		r.appendChild(i.root), n.appendChild(r);
+		let a = {
+			fragmentEl: n,
+			clipEl: r,
+			mirrorRoot: i.root,
+			keyToCloneEl: i.map
 		};
-		this.fragments.set(id, dom);
-		return dom;
+		return this.fragments.set(e, a), a;
 	}
 	createMirrorRoot() {
-		const clone = this.sourceRoot.cloneNode(true);
-		clone.classList.add("ori-live-mirror");
-		clone.setAttribute("aria-hidden", "true");
-		clone.setAttribute("inert", "");
-		clone.style.pointerEvents = "none";
-		clone.style.userSelect = "none";
-		sanitizeDuplicateIds(clone);
-		return {
-			root: clone,
-			map: buildCloneElementMap(clone)
+		let e = this.sourceRoot.cloneNode(!0);
+		return e.classList.add("ori-live-mirror"), e.setAttribute("aria-hidden", "true"), e.setAttribute("inert", ""), e.style.pointerEvents = "none", e.style.userSelect = "none", fe(e), {
+			root: e,
+			map: de(e)
 		};
 	}
 };
-function buildCloneElementMap(root) {
-	const map = /* @__PURE__ */ new Map();
-	const key = root.dataset.foldKey;
-	if (key) map.set(key, root);
-	for (const element of root.querySelectorAll("[data-fold-key]")) {
-		const elementKey = element.dataset.foldKey;
-		if (elementKey) map.set(elementKey, element);
+function de(e) {
+	let t = /* @__PURE__ */ new Map(), n = e.dataset.foldKey;
+	n && t.set(n, e);
+	for (let n of e.querySelectorAll("[data-fold-key]")) {
+		let e = n.dataset.foldKey;
+		e && t.set(e, n);
 	}
-	return map;
+	return t;
 }
-function sanitizeDuplicateIds(root) {
-	if (root.id) {
-		root.dataset.foldOriginalId = root.id;
-		root.removeAttribute("id");
-	}
-	for (const element of root.querySelectorAll("[id]")) {
-		element.dataset.foldOriginalId = element.id;
-		element.removeAttribute("id");
-	}
+function fe(e) {
+	e.id && (e.dataset.foldOriginalId = e.id, e.removeAttribute("id"));
+	for (let t of e.querySelectorAll("[id]")) t.dataset.foldOriginalId = t.id, t.removeAttribute("id");
 }
-var SourceSurface = class {
+var pe = class {
 	sourceRoot;
-	constructor(sourceRoot) {
-		this.sourceRoot = sourceRoot;
+	constructor(e) {
+		this.sourceRoot = e;
 	}
-	elementFromLocalPoint(point) {
-		const candidates = Array.from(this.sourceRoot.querySelectorAll("*")).reverse();
-		for (const element of candidates) {
-			const box = readLocalBox(element);
-			if (box && point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height) return element;
+	elementFromLocalPoint(e) {
+		let t = Array.from(this.sourceRoot.querySelectorAll("*")).reverse();
+		for (let n of t) {
+			let t = me(n);
+			if (t && e.x >= t.x && e.x <= t.x + t.width && e.y >= t.y && e.y <= t.y + t.height) return n;
 		}
 		return this.sourceRoot;
 	}
 	dispose() {}
 };
-function readLocalBox(element) {
-	const style = getComputedStyle(element);
-	const left = parseCssPx(element.style.left || style.left);
-	const top = parseCssPx(element.style.top || style.top);
-	const width = parseCssPx(element.style.width || style.width);
-	const height = parseCssPx(element.style.height || style.height);
-	if (width > 0 && height > 0) return {
-		x: left,
-		y: top,
-		width,
-		height
+function me(e) {
+	let t = getComputedStyle(e), n = y(e.style.left || t.left), r = y(e.style.top || t.top), i = y(e.style.width || t.width), a = y(e.style.height || t.height);
+	if (i > 0 && a > 0) return {
+		x: n,
+		y: r,
+		width: i,
+		height: a
 	};
-	const rect = element.getBoundingClientRect();
-	if (rect.width > 0 && rect.height > 0) return {
-		x: rect.left,
-		y: rect.top,
-		width: rect.width,
-		height: rect.height
-	};
-	return null;
+	let o = e.getBoundingClientRect();
+	return o.width > 0 && o.height > 0 ? {
+		x: o.left,
+		y: o.top,
+		width: o.width,
+		height: o.height
+	} : null;
 }
-function parseCssPx(value) {
-	const parsed = Number.parseFloat(value);
-	return Number.isFinite(parsed) ? parsed : 0;
+function y(e) {
+	let t = Number.parseFloat(e);
+	return Number.isFinite(t) ? t : 0;
 }
-var StaticImageSnapshotProvider = class {
+var b = class {
 	snapshot;
-	constructor(snapshot) {
-		this.snapshot = snapshot;
+	constructor(e) {
+		this.snapshot = e;
 	}
 	async capture() {
 		return this.snapshot;
 	}
-};
-var ButtonAdapter = class {
+}, he = class {
 	name = "ButtonAdapter";
-	match(el) {
-		return el instanceof HTMLButtonElement || el instanceof HTMLInputElement && [
+	match(e) {
+		return e instanceof HTMLButtonElement || e instanceof HTMLInputElement && [
 			"button",
 			"submit",
 			"checkbox",
 			"radio"
-		].includes(el.type);
+		].includes(e.type);
 	}
-	pointerUp(ctx) {
-		ctx.sourceTarget.click();
-		return true;
+	pointerUp(e) {
+		return e.sourceTarget.click(), !0;
 	}
-};
-var AnchorAdapter = class {
+}, ge = class {
 	name = "AnchorAdapter";
-	match(el) {
-		return el instanceof HTMLAnchorElement;
+	match(e) {
+		return e instanceof HTMLAnchorElement;
 	}
-	pointerUp(ctx) {
-		ctx.sourceTarget.click();
-		return true;
+	pointerUp(e) {
+		return e.sourceTarget.click(), !0;
 	}
-};
-var TextInputProxyAdapter = class {
+}, _e = class {
 	name = "TextInputProxyAdapter";
-	match(el) {
-		return el instanceof HTMLInputElement && [
+	match(e) {
+		return e instanceof HTMLInputElement && [
 			"text",
 			"search",
 			"email",
 			"url",
 			"tel",
 			"password"
-		].includes(el.type);
+		].includes(e.type);
 	}
-	pointerUp(ctx) {
-		const sourceInput = ctx.sourceTarget;
-		const activationLayer = findActivationLayer(sourceInput);
-		if (!activationLayer) return false;
-		const proxy = sourceInput.cloneNode(false);
-		proxy.removeAttribute("id");
-		proxy.classList.add("ori-input-proxy");
-		proxy.value = sourceInput.value;
-		const localBox = readLocalBox(sourceInput);
-		proxy.style.position = "absolute";
-		proxy.style.left = `${localBox?.x ?? 0}px`;
-		proxy.style.top = `${localBox?.y ?? 0}px`;
-		proxy.style.width = `${localBox?.width ?? sourceInput.getBoundingClientRect().width}px`;
-		proxy.style.height = `${localBox?.height ?? sourceInput.getBoundingClientRect().height}px`;
-		proxy.style.pointerEvents = "auto";
-		activationLayer.replaceChildren(proxy);
-		const sync = () => {
-			sourceInput.value = proxy.value;
-			sourceInput.dispatchEvent(new Event("input", { bubbles: true }));
+	pointerUp(e) {
+		let t = e.sourceTarget, n = ve(t);
+		if (!n) return !1;
+		let r = t.cloneNode(!1);
+		r.removeAttribute("id"), r.classList.add("ori-input-proxy"), r.value = t.value;
+		let i = me(t);
+		r.style.position = "absolute", r.style.left = `${i?.x ?? 0}px`, r.style.top = `${i?.y ?? 0}px`, r.style.width = `${i?.width ?? t.getBoundingClientRect().width}px`, r.style.height = `${i?.height ?? t.getBoundingClientRect().height}px`, r.style.pointerEvents = "auto", n.replaceChildren(r);
+		let a = () => {
+			t.value = r.value, t.dispatchEvent(new Event("input", { bubbles: !0 }));
 		};
-		proxy.addEventListener("input", sync);
-		proxy.addEventListener("blur", () => {
-			sync();
-			sourceInput.dispatchEvent(new Event("change", { bubbles: true }));
-		}, { once: true });
-		proxy.focus();
-		proxy.setSelectionRange?.(proxy.value.length, proxy.value.length);
-		return true;
+		return r.addEventListener("input", a), r.addEventListener("blur", () => {
+			a(), t.dispatchEvent(new Event("change", { bubbles: !0 }));
+		}, { once: !0 }), r.focus(), r.setSelectionRange?.(r.value.length, r.value.length), !0;
 	}
 };
-function findActivationLayer(element) {
-	return element.closest(".ori-source-layer")?.parentElement?.querySelector(":scope > .ori-activation-layer") ?? null;
+function ve(e) {
+	return e.closest(".ori-source-layer")?.parentElement?.querySelector(":scope > .ori-activation-layer") ?? null;
 }
-function dispatchSyntheticEvent(target, type) {
-	const EventCtor = typeof PointerEvent === "function" ? PointerEvent : Event;
-	target.dispatchEvent(new EventCtor(type, { bubbles: true }));
+function ye(e, t) {
+	let n = typeof PointerEvent == "function" ? PointerEvent : Event;
+	e.dispatchEvent(new n(t, { bubbles: !0 }));
 }
-var StaticOrigamiView = class {
+var be = class {
 	options;
 	mode = "static-view";
 	state;
 	tree;
 	renderer;
-	constructor(options) {
-		this.options = options;
-		this.state = {
-			paper: options.paper,
-			camera: defaultCamera(options.paper, options.camera),
-			foldOps: cloneFoldOps(options.foldOps),
+	constructor(e) {
+		this.options = e, this.state = {
+			paper: e.paper,
+			camera: t(e.paper, e.camera),
+			foldOps: n(e.foldOps),
 			controls: {}
-		};
-		this.tree = buildDerivedFoldTree(this.state);
-		setupHost(options.host, "static-view", this.state.camera);
-		this.renderer = new FoldVisualRenderer(ensureLayer(options.host, "ori-visual-layer"));
-		this.renderer.setSnapshot(options.snapshot);
+		}, this.tree = h(this.state), x(e.host, "static-view", this.state.camera), this.renderer = new _(S(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.snapshot);
 	}
 	async mount() {
 		this.render();
 	}
 	render() {
-		this.renderer.renderPieces(piecesFromTree(this.tree, this.state.paper), this.state.paper, false);
+		this.renderer.renderPieces(g(this.tree, this.state.paper), this.state.paper, !1);
 	}
-	setAngle(opId, angleDeg) {
-		const op = this.state.foldOps.find((candidate) => candidate.id === opId);
-		if (!op) return false;
-		op.angleDeg = angleDeg;
-		this.tree = buildDerivedFoldTree(this.state);
-		this.render();
-		return true;
+	setAngle(e, t) {
+		let n = this.state.foldOps.find((t) => t.id === e);
+		return n ? (n.angleDeg = t, this.tree = h(this.state), this.render(), !0) : !1;
 	}
 	dispose() {
 		this.options.host.innerHTML = "";
 	}
-};
-var BakedOrigamiView = class {
+}, xe = class {
 	options;
 	mode = "baked-view";
 	renderer;
-	constructor(options) {
-		this.options = options;
-		setupHost(options.host, "baked-view", options.manifest.camera);
-		options.host.dataset.oriBaked = "true";
-		this.renderer = new FoldVisualRenderer(ensureLayer(options.host, "ori-visual-layer"));
-		this.renderer.setSnapshot(options.manifest.snapshot);
+	constructor(e) {
+		this.options = e, x(e.host, "baked-view", e.manifest.camera), e.host.dataset.oriBaked = "true", this.renderer = new _(S(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.manifest.snapshot);
 	}
 	async mount() {
 		this.render();
 	}
 	render() {
-		this.renderer.renderPieces(this.options.manifest.pieces, this.options.manifest.paper, true);
+		this.renderer.renderPieces(this.options.manifest.pieces, this.options.manifest.paper, !0);
 	}
 	setAngle() {
-		return false;
+		return !1;
 	}
 	dispose() {
 		this.options.host.innerHTML = "";
 	}
-};
-var InteractiveOrigamiRuntime = class {
+}, Se = class {
 	options;
 	mode = "interactive-bridge";
 	state;
 	tree;
 	source;
 	renderer;
-	keyRegistry = new FoldElementKeyRegistry();
+	keyRegistry = new ue();
 	adapters;
 	interactionLayer;
 	snapshot = null;
-	constructor(options) {
-		this.options = options;
-		this.state = {
-			paper: options.paper,
-			camera: defaultCamera(options.paper, options.camera),
-			foldOps: cloneFoldOps(options.foldOps ?? []),
+	constructor(e) {
+		this.options = e, this.state = {
+			paper: e.paper,
+			camera: t(e.paper, e.camera),
+			foldOps: n(e.foldOps ?? []),
 			controls: {}
-		};
-		this.tree = buildDerivedFoldTree(this.state);
-		this.adapters = [
-			...options.adapters ?? [],
-			new TextInputProxyAdapter(),
-			new ButtonAdapter(),
-			new AnchorAdapter()
-		];
-		this.source = new SourceSurface(options.sourceRoot);
-		setupHost(options.host, "interactive-bridge", this.state.camera);
-		ensureLayer(options.host, "ori-source-layer").appendChild(options.sourceRoot);
-		const visualLayer = ensureLayer(options.host, "ori-visual-layer");
-		this.renderer = options.visual?.backend === "live-mirror" ? new LiveMirrorRenderer(visualLayer, options.sourceRoot, this.keyRegistry) : new FoldVisualRenderer(visualLayer);
-		this.interactionLayer = ensureLayer(options.host, "ori-interaction-layer");
-		ensureLayer(options.host, "ori-activation-layer");
+		}, this.tree = h(this.state), this.adapters = [
+			...e.adapters ?? [],
+			new _e(),
+			new he(),
+			new ge()
+		], this.source = new pe(e.sourceRoot), x(e.host, "interactive-bridge", this.state.camera), S(e.host, "ori-source-layer").appendChild(e.sourceRoot);
+		let r = S(e.host, "ori-visual-layer");
+		this.renderer = e.visual?.backend === "live-mirror" ? new v(r, e.sourceRoot, this.keyRegistry) : new _(r), this.interactionLayer = S(e.host, "ori-interaction-layer"), S(e.host, "ori-activation-layer");
 	}
-	onLayerPointer = (event) => {
-		const rect = this.options.host.getBoundingClientRect();
+	onLayerPointer = (e) => {
+		let t = this.options.host.getBoundingClientRect();
 		this.bridgePointer({
-			clientX: event.clientX - rect.left,
-			clientY: event.clientY - rect.top,
-			type: event.type
+			clientX: e.clientX - t.left,
+			clientY: e.clientY - t.top,
+			type: e.type
 		});
 	};
 	async mount() {
-		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
-		if (this.renderer instanceof FoldVisualRenderer) this.renderer.setSnapshot(this.snapshot);
-		this.render();
-		this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer);
-		this.interactionLayer.addEventListener("pointermove", this.onLayerPointer);
-		this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
+		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper), this.renderer instanceof _ && this.renderer.setSnapshot(this.snapshot), this.render(), this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer), this.interactionLayer.addEventListener("pointermove", this.onLayerPointer), this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
 	}
 	render() {
-		if (!this.snapshot && this.renderer instanceof FoldVisualRenderer) return;
-		this.renderer.renderPieces(piecesFromTree(this.tree, this.state.paper), this.state.paper, false);
-		if (this.renderer instanceof LiveMirrorRenderer) this.renderer.mirrorFormValues();
+		!this.snapshot && this.renderer instanceof _ || (this.renderer.renderPieces(g(this.tree, this.state.paper), this.state.paper, !1), this.renderer instanceof v && this.renderer.mirrorFormValues());
 	}
-	setAngle(opId, angleDeg) {
-		const op = this.state.foldOps.find((candidate) => candidate.id === opId);
-		if (!op) return false;
-		op.angleDeg = angleDeg;
-		this.tree = buildDerivedFoldTree(this.state);
-		this.render();
-		return true;
+	setAngle(e, t) {
+		let n = this.state.foldOps.find((t) => t.id === e);
+		return n ? (n.angleDeg = t, this.tree = h(this.state), this.render(), !0) : !1;
 	}
-	setMode(mode) {
-		this.options.host.dataset.oriMode = mode;
+	setMode(e) {
+		this.options.host.dataset.oriMode = e;
 	}
-	bridgePointer(event) {
-		const hit = hitTestFoldTree({
-			x: event.clientX,
-			y: event.clientY
+	bridgePointer(e) {
+		let t = ce({
+			x: e.clientX,
+			y: e.clientY
 		}, this.tree);
-		if (!hit) return false;
-		const target = this.source.elementFromLocalPoint(hit.localPoint);
-		if (!target) return false;
-		const ctx = {
-			originalEvent: event,
-			hit,
-			sourcePoint: hit.localPoint,
-			sourceTarget: target,
-			elementId: target.dataset.oriElementId
+		if (!t) return !1;
+		let n = this.source.elementFromLocalPoint(t.localPoint);
+		if (!n) return !1;
+		let r = {
+			originalEvent: e,
+			hit: t,
+			sourcePoint: t.localPoint,
+			sourceTarget: n,
+			elementId: n.dataset.oriElementId
 		};
-		this.syncLivePseudoState(event.type, target);
-		const method = event.type === "pointerdown" ? "pointerDown" : event.type === "pointermove" ? "pointerMove" : event.type === "pointerup" || event.type === "click" ? "pointerUp" : void 0;
-		if (method) for (const adapter of this.adapters) {
-			const handler = adapter[method];
-			if (adapter.match(target) && handler?.call(adapter, ctx)) return true;
+		this.syncLivePseudoState(e.type, n);
+		let i = e.type === "pointerdown" ? "pointerDown" : e.type === "pointermove" ? "pointerMove" : e.type === "pointerup" || e.type === "click" ? "pointerUp" : void 0;
+		if (i) for (let e of this.adapters) {
+			let t = e[i];
+			if (e.match(n) && t?.call(e, r)) return !0;
 		}
-		dispatchSyntheticEvent(target, event.type);
-		return true;
+		return ye(n, e.type), !0;
 	}
-	syncLivePseudoState(type, target) {
-		if (!(this.renderer instanceof LiveMirrorRenderer)) return;
-		const pseudo = this.options.visual?.pseudoStates;
-		if (!pseudo) return;
-		const key = this.keyRegistry.ensureKey(target);
-		if (type === "pointermove" && pseudo.hover) this.renderer.setPseudoState({
-			key,
-			hover: true
-		});
-		if (type === "pointerdown" && pseudo.active) this.renderer.setPseudoState({
-			key,
-			active: true
-		});
-		if ((type === "pointerup" || type === "click") && pseudo.active) this.renderer.setPseudoState({ active: false });
+	syncLivePseudoState(e, t) {
+		if (!(this.renderer instanceof v)) return;
+		let n = this.options.visual?.pseudoStates;
+		if (!n) return;
+		let r = this.keyRegistry.ensureKey(t);
+		e === "pointermove" && n.hover && this.renderer.setPseudoState({
+			key: r,
+			hover: !0
+		}), e === "pointerdown" && n.active && this.renderer.setPseudoState({
+			key: r,
+			active: !0
+		}), (e === "pointerup" || e === "click") && n.active && this.renderer.setPseudoState({ active: !1 });
 	}
 	dispose() {
-		this.interactionLayer.removeEventListener("pointerdown", this.onLayerPointer);
-		this.interactionLayer.removeEventListener("pointermove", this.onLayerPointer);
-		this.interactionLayer.removeEventListener("pointerup", this.onLayerPointer);
-		this.source.dispose();
-		this.snapshot?.revoke?.();
-		this.options.host.innerHTML = "";
+		this.interactionLayer.removeEventListener("pointerdown", this.onLayerPointer), this.interactionLayer.removeEventListener("pointermove", this.onLayerPointer), this.interactionLayer.removeEventListener("pointerup", this.onLayerPointer), this.source.dispose(), this.snapshot?.revoke?.(), this.options.host.innerHTML = "";
 	}
 };
-function setupHost(host, mode, camera) {
-	host.dataset.oriMode = mode;
-	host.style.position = host.style.position || "relative";
-	host.style.perspective = `${camera.perspective}px`;
-	host.style.perspectiveOrigin = `${camera.perspectiveOrigin.x}px ${camera.perspectiveOrigin.y}px`;
-	host.style.transformStyle = "preserve-3d";
+function x(e, t, n) {
+	e.dataset.oriMode = t, e.style.position = e.style.position || "relative", e.style.perspective = `${n.perspective}px`, e.style.perspectiveOrigin = `${n.perspectiveOrigin.x}px ${n.perspectiveOrigin.y}px`, e.style.transformStyle = "preserve-3d";
 }
-function ensureLayer(host, className) {
-	const existing = host.querySelector(`:scope > .${className}`);
-	if (existing) return existing;
-	const layer = document.createElement("div");
-	layer.className = className;
-	layer.style.position = "absolute";
-	layer.style.inset = "0";
-	if (className === "ori-visual-layer" || className === "ori-activation-layer") layer.style.transformStyle = "preserve-3d";
-	if (className === "ori-visual-layer" || className === "ori-activation-layer") layer.style.pointerEvents = "none";
-	host.appendChild(layer);
-	return layer;
+function S(e, t) {
+	let n = e.querySelector(`:scope > .${t}`);
+	if (n) return n;
+	let r = document.createElement("div");
+	return r.className = t, r.style.position = "absolute", r.style.inset = "0", (t === "ori-visual-layer" || t === "ori-activation-layer") && (r.style.transformStyle = "preserve-3d"), (t === "ori-visual-layer" || t === "ori-activation-layer") && (r.style.pointerEvents = "none"), e.appendChild(r), r;
 }
-function createOrigamiRuntime(options) {
-	if (options.mode === "static-view") return new StaticOrigamiView(options);
-	if (options.mode === "baked-view") return new BakedOrigamiView(options);
-	return new InteractiveOrigamiRuntime(options);
+function C(e) {
+	return e.mode === "static-view" ? new be(e) : e.mode === "baked-view" ? new xe(e) : new Se(e);
 }
 //#endregion
 //#region demo/main.ts
-var target = document.querySelector("#target");
-var button = document.querySelector("#toggle");
-var saveBtn = document.querySelector("#saveBtn");
-var nameInput = document.querySelector("#nameInput");
-var copyInstall = document.querySelector("#copyInstall");
-var installCommand = document.querySelector("#installCommand");
-var foldStage = document.querySelector("#foldStage");
-var activeFoldName = document.querySelector("#activeFoldName");
-var angleValue = document.querySelector("#angleValue");
-var angleDial = document.querySelector("#angleDial");
-var angleHand = document.querySelector("#angleHand");
-var creaseTools = document.querySelector("#creaseTools");
-var liveMirrorTarget = document.querySelector("#liveMirrorTarget");
-if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools || !liveMirrorTarget) throw new Error("Demo DOM is missing required elements");
-var stageElement = foldStage;
-var activeNameElement = activeFoldName;
-var angleValueElement = angleValue;
-var angleDialElement = angleDial;
-var angleHandElement = angleHand;
-var creaseToolHost = creaseTools;
-var liveMirrorTargetElement = liveMirrorTarget;
-var targetElement = target;
-var saveButtonElement = saveBtn;
-var nameInputElement = nameInput;
-var copyInstallButton = copyInstall;
-var installCommandElement = installCommand;
-copyInstallButton.addEventListener("click", async () => {
-	const command = installCommandElement.textContent?.trim() || "npm install orikata";
+var w = document.querySelector("#target"), T = document.querySelector("#toggle"), E = document.querySelector("#saveBtn"), D = document.querySelector("#nameInput"), O = document.querySelector("#copyInstall"), k = document.querySelector("#installCommand"), A = document.querySelector("#foldStage"), j = document.querySelector("#activeFoldName"), M = document.querySelector("#angleValue"), N = document.querySelector("#angleDial"), P = document.querySelector("#angleHand"), Ce = document.querySelector("#creaseTools"), we = document.querySelector("#liveMirrorTarget");
+if (!w || !T || !E || !D || !O || !k || !A || !j || !M || !N || !P || !Ce || !we) throw Error("Demo DOM is missing required elements");
+var F = A, Te = j, Ee = M, I = N, De = P, Oe = Ce, L = we, R = w, z = E, B = D, V = O, ke = k;
+V.addEventListener("click", async () => {
+	let e = ke.textContent?.trim() || "npm install orikata";
 	try {
-		await navigator.clipboard?.writeText(command);
+		await navigator.clipboard?.writeText(e);
 	} catch {
-		const scratch = document.createElement("textarea");
-		scratch.value = command;
-		scratch.style.position = "fixed";
-		scratch.style.opacity = "0";
-		document.body.appendChild(scratch);
-		scratch.select();
-		document.execCommand("copy");
-		scratch.remove();
+		let t = document.createElement("textarea");
+		t.value = e, t.style.position = "fixed", t.style.opacity = "0", document.body.appendChild(t), t.select(), document.execCommand("copy"), t.remove();
 	}
-	copyInstallButton.textContent = "copied";
-	window.setTimeout(() => {
-		copyInstallButton.textContent = "copy";
+	V.textContent = "copied", window.setTimeout(() => {
+		V.textContent = "copy";
 	}, 1100);
 });
-function setSnapshotInputValue(value) {
-	targetElement.dataset.inputValue = value;
-	refreshSnapshotTexture();
+function Ae(e) {
+	R.dataset.inputValue = e, X();
 }
-targetElement.addEventListener("focusin", (event) => {
-	if (event.target.classList?.contains("ori-input-proxy")) targetElement.dataset.inputActive = "true";
+R.addEventListener("focusin", (e) => {
+	e.target.classList?.contains("ori-input-proxy") && (R.dataset.inputActive = "true");
+}), R.addEventListener("focusout", (e) => {
+	e.target.classList?.contains("ori-input-proxy") && delete R.dataset.inputActive;
 });
-targetElement.addEventListener("focusout", (event) => {
-	if (event.target.classList?.contains("ori-input-proxy")) delete targetElement.dataset.inputActive;
-});
-var feedbackTimer;
-saveButtonElement.addEventListener("click", () => {
-	window.clearTimeout(feedbackTimer);
-	saveButtonElement.textContent = "Saved";
-	refreshSnapshotTexture();
-	feedbackTimer = window.setTimeout(() => {
-		saveButtonElement.textContent = "Save";
-		refreshSnapshotTexture();
+var je;
+z.addEventListener("click", () => {
+	window.clearTimeout(je), z.textContent = "Saved", X(), je = window.setTimeout(() => {
+		z.textContent = "Save", X();
 	}, 620);
+}), B.addEventListener("input", () => {
+	Ae(B.value);
 });
-nameInputElement.addEventListener("input", () => {
-	setSnapshotInputValue(nameInputElement.value);
-});
-var foldOps = [{
+var Me = [{
 	id: "center-valley",
-	targetNodeId: ROOT_ID,
+	targetNodeId: e,
 	childNodeId: "right-panel",
 	line: {
 		a: {
@@ -984,33 +760,22 @@ var foldOps = [{
 	},
 	movingSide: 1,
 	angleDeg: 48
-}];
-var foldAngles = {
+}], H = {
 	"center-valley": -60,
 	"corner-mountain": 48
-};
-var foldLabels = {
+}, Ne = {
 	"center-valley": "center valley",
 	"corner-mountain": "corner mountain"
-};
-var activeFoldId = "corner-mountain";
-function applyFoldAngle(id, angle) {
-	foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
-	runtime?.setAngle(id, foldAngles[id]);
-	renderCreaseTools();
-	stageElement.dataset.activeFold = activeFoldId;
-	stageElement.dataset.centerAngle = String(foldAngles["center-valley"]);
-	stageElement.dataset.cornerAngle = String(foldAngles["corner-mountain"]);
-	angleValueElement.textContent = `${foldAngles[activeFoldId]}°`;
-	angleDialElement.setAttribute("aria-valuenow", String(foldAngles[activeFoldId]));
-	angleHandElement.style.transform = `rotate(${foldAngles[activeFoldId]}deg)`;
+}, U = "corner-mountain";
+function W(e, t) {
+	H[e] = Math.max(-85, Math.min(85, Math.round(t))), Q?.setAngle(e, H[e]), K(), F.dataset.activeFold = U, F.dataset.centerAngle = String(H["center-valley"]), F.dataset.cornerAngle = String(H["corner-mountain"]), Ee.textContent = `${H[U]}°`, I.setAttribute("aria-valuenow", String(H[U])), De.style.transform = `rotate(${H[U]}deg)`;
 }
-function setCandidateState(id, state) {
-	for (const line of targetElement.querySelectorAll("[data-fold-candidate], .crease-tool-layer[data-tool-id]")) if (line.dataset.foldCandidate === id || line.dataset.toolId === id) line.dataset.state = state;
+function G(e, t) {
+	for (let n of R.querySelectorAll("[data-fold-candidate], .crease-tool-layer[data-tool-id]")) (n.dataset.foldCandidate === e || n.dataset.toolId === e) && (n.dataset.state = t);
 }
-var creaseGuides = [{
+var Pe = [{
 	id: "center-valley",
-	nodeId: ROOT_ID,
+	nodeId: e,
 	guide: {
 		x1: 210,
 		y1: 0,
@@ -1039,86 +804,56 @@ var creaseGuides = [{
 		y2: 80
 	}
 }];
-function svgLine(attrs, className) {
-	const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-	line.setAttribute("class", className);
-	for (const [key, value] of Object.entries(attrs)) line.setAttribute(key, String(value));
-	return line;
+function Fe(e, t) {
+	let n = document.createElementNS("http://www.w3.org/2000/svg", "line");
+	n.setAttribute("class", t);
+	for (let [t, r] of Object.entries(e)) n.setAttribute(t, String(r));
+	return n;
 }
-function renderCreaseTools() {
-	creaseToolHost.remove();
-	for (const oldLayer of targetElement.querySelectorAll(":scope > .crease-tool-layer")) oldLayer.remove();
-	for (const guide of creaseGuides) {
-		const foldedNode = targetElement.querySelector(`[data-ori-node-id="${guide.nodeId}"]`);
-		if (!foldedNode) continue;
-		const layer = document.createElement("div");
-		layer.className = "crease-tool-layer";
-		layer.dataset.toolNode = guide.nodeId;
-		layer.dataset.toolId = guide.id;
-		layer.dataset.state = guide.id === activeFoldId ? "selected" : "idle";
-		layer.style.transform = foldedNode.style.transform || getComputedStyle(foldedNode).transform;
-		const hotspot = document.createElement("button");
-		hotspot.type = "button";
-		hotspot.className = `crease-hotspot ${guide.id === "center-valley" ? "center" : "corner"}`;
-		hotspot.dataset.foldCandidate = guide.id;
-		hotspot.dataset.state = guide.id === activeFoldId ? "selected" : "idle";
-		hotspot.setAttribute("aria-label", `select ${foldLabels[guide.id]} crease`);
-		hotspot.addEventListener("mouseenter", () => {
-			if (guide.id !== activeFoldId) setCandidateState(guide.id, "hover");
+function K() {
+	Oe.remove();
+	for (let e of R.querySelectorAll(":scope > .crease-tool-layer")) e.remove();
+	for (let e of Pe) {
+		let t = R.querySelector(`[data-ori-node-id="${e.nodeId}"]`);
+		if (!t) continue;
+		let n = document.createElement("div");
+		n.className = "crease-tool-layer", n.dataset.toolNode = e.nodeId, n.dataset.toolId = e.id, n.dataset.state = e.id === U ? "selected" : "idle", n.style.transform = t.style.transform || getComputedStyle(t).transform;
+		let r = document.createElement("button");
+		r.type = "button", r.className = `crease-hotspot ${e.id === "center-valley" ? "center" : "corner"}`, r.dataset.foldCandidate = e.id, r.dataset.state = e.id === U ? "selected" : "idle", r.setAttribute("aria-label", `select ${Ne[e.id]} crease`), r.addEventListener("mouseenter", () => {
+			e.id !== U && G(e.id, "hover");
+		}), r.addEventListener("mouseleave", () => {
+			e.id !== U && G(e.id, "idle");
+		}), r.addEventListener("click", (t) => {
+			t.stopPropagation(), Ie(e.id);
 		});
-		hotspot.addEventListener("mouseleave", () => {
-			if (guide.id !== activeFoldId) setCandidateState(guide.id, "idle");
-		});
-		hotspot.addEventListener("click", (event) => {
-			event.stopPropagation();
-			setActiveFold(guide.id);
-		});
-		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-		svg.setAttribute("class", "fold-tool-layer");
-		svg.setAttribute("viewBox", "0 0 420 220");
-		svg.setAttribute("aria-hidden", "true");
-		svg.appendChild(svgLine(guide.guide, "candidate-guide"));
-		svg.appendChild(svgLine(guide.hot, "candidate-line"));
-		layer.appendChild(hotspot);
-		layer.appendChild(svg);
-		targetElement.appendChild(layer);
+		let i = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		i.setAttribute("class", "fold-tool-layer"), i.setAttribute("viewBox", "0 0 420 220"), i.setAttribute("aria-hidden", "true"), i.appendChild(Fe(e.guide, "candidate-guide")), i.appendChild(Fe(e.hot, "candidate-line")), n.appendChild(r), n.appendChild(i), R.appendChild(n);
 	}
 }
-function setActiveFold(id) {
-	activeFoldId = id;
-	activeNameElement.textContent = foldLabels[id] ?? id;
-	for (const guide of creaseGuides) setCandidateState(guide.id, guide.id === id ? "selected" : "idle");
-	applyFoldAngle(id, foldAngles[id] ?? 0);
+function Ie(e) {
+	U = e, Te.textContent = Ne[e] ?? e;
+	for (let t of Pe) G(t.id, t.id === e ? "selected" : "idle");
+	W(e, H[e] ?? 0);
 }
-function angleFromPointer(event) {
-	const rect = angleDialElement.getBoundingClientRect();
-	const cx = rect.left + rect.width / 2;
-	const cy = rect.top + rect.height / 2;
-	const deg = Math.atan2(event.clientY - cy, event.clientX - cx) * 180 / Math.PI;
-	return Math.max(-85, Math.min(85, Math.round(deg)));
+function Le(e) {
+	let t = I.getBoundingClientRect(), n = t.left + t.width / 2, r = t.top + t.height / 2, i = Math.atan2(e.clientY - r, e.clientX - n) * 180 / Math.PI;
+	return Math.max(-85, Math.min(85, Math.round(i)));
 }
-function updateAngleFromPointer(event) {
-	applyFoldAngle(activeFoldId, angleFromPointer(event));
+function q(e) {
+	W(U, Le(e));
 }
-angleDialElement.addEventListener("pointerdown", (event) => {
-	angleDialElement.setPointerCapture(event.pointerId);
-	updateAngleFromPointer(event);
+I.addEventListener("pointerdown", (e) => {
+	I.setPointerCapture(e.pointerId), q(e);
+}), I.addEventListener("pointermove", (e) => {
+	I.hasPointerCapture(e.pointerId) && q(e);
+}), I.addEventListener("click", (e) => q(e)), I.addEventListener("keydown", (e) => {
+	e.key !== "ArrowLeft" && e.key !== "ArrowRight" || (e.preventDefault(), W(U, H[U] + (e.key === "ArrowRight" ? 5 : -5)));
 });
-angleDialElement.addEventListener("pointermove", (event) => {
-	if (angleDialElement.hasPointerCapture(event.pointerId)) updateAngleFromPointer(event);
-});
-angleDialElement.addEventListener("click", (event) => updateAngleFromPointer(event));
-angleDialElement.addEventListener("keydown", (event) => {
-	if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-	event.preventDefault();
-	applyFoldAngle(activeFoldId, foldAngles[activeFoldId] + (event.key === "ArrowRight" ? 5 : -5));
-});
-function escapeSvgText(value) {
-	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+function J(e) {
+	return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function buildSnapshotSvg(name, buttonLabel) {
-	const safeName = escapeSvgText(name || "\xA0");
-	const safeButton = escapeSvgText(buttonLabel || "Save");
+function Re(e, t) {
+	let n = J(e || "\xA0"), r = J(t || "Save");
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">
   <defs>
@@ -1145,24 +880,24 @@ function buildSnapshotSvg(name, buttonLabel) {
     <text x="34" y="91" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">one real DOM</text>
     <text x="34" y="111" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">folded like paper</text>
     <path d="M270 112h100" stroke="#1f2420" stroke-opacity=".42" stroke-width="1"/>
-    <text x="282" y="102" font-family="system-ui, sans-serif" font-size="13" fill="#1f2420">${safeName}</text>
-    <rect x="270" y="132" width="100" height="36" fill="${buttonLabel === "Saved" ? "#b65f45" : "#2b2f2a"}" fill-opacity="${buttonLabel === "Saved" ? "0.86" : "1"}"/>
-    <text x="320" y="155" text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="13" fill="#f7f1e4">${safeButton}</text>
+    <text x="282" y="102" font-family="system-ui, sans-serif" font-size="13" fill="#1f2420">${n}</text>
+    <rect x="270" y="132" width="100" height="36" fill="${t === "Saved" ? "#b65f45" : "#2b2f2a"}" fill-opacity="${t === "Saved" ? "0.86" : "1"}"/>
+    <text x="320" y="155" text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="13" fill="#f7f1e4">${r}</text>
     <circle cx="385" cy="32" r="18" fill="#b65f45" fill-opacity="0.18"/>
   </g>
 </svg>`;
 }
-var snapshot = {
+var Y = {
 	id: "washi-asanoha-card",
 	width: 420,
 	height: 220,
-	url: `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || "Save"))}`
+	url: `data:image/svg+xml,${encodeURIComponent(Re(B.value, z.textContent || "Save"))}`
 };
-function refreshSnapshotTexture() {
-	snapshot.url = `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || "Save"))}`;
-	runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
+function X() {
+	Y.url = `data:image/svg+xml,${encodeURIComponent(Re(B.value, z.textContent || "Save"))}`, Q.setAngle("corner-mountain", H["corner-mountain"]);
 }
-function buildCodeSnapshotSvg(code) {
+function ze(e, t, n = "idle") {
+	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${J(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
   <defs>
@@ -1178,27 +913,27 @@ function buildCodeSnapshotSvg(code) {
   </defs>
   <rect width="248" height="148" fill="#f3ead8"/>
   <rect width="248" height="148" fill="url(#kozo)"/>
+  <rect x="12" y="8" width="62" height="16" rx="8" fill="${i}" fill-opacity="0.13"/>
+  <text x="43" y="20" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" fill="${i}" letter-spacing="1.2">${t === "interactive" ? "bridge" : t === "baked" ? "manifest" : "static"}</text>
   <path d="M124 0v148" stroke="#2b2f2a" stroke-opacity="0.16" stroke-dasharray="5 7"/>
-  <path d="M176 0 248 46" stroke="#b65f45" stroke-opacity="0.34" stroke-dasharray="4 6"/>
-  <g filter="url(#paperNoise)">${code.split("\n").slice(0, 8).map((line, index) => {
-		return `<text x="16" y="${24 + index * 16}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#252922">${escapeSvgText(line)}</text>`;
-	}).join("")}</g>
+  <path d="M176 0 248 46" stroke="${i}" stroke-opacity="0.38" stroke-dasharray="4 6"/>
+  <g filter="url(#paperNoise)">${r}</g>
+  ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${a}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${a}</text>`}
 </svg>`;
 }
-async function mountLiveMirrorSpike() {
-	const sourceRoot = liveMirrorTargetElement.querySelector(".live-card-source");
-	if (!sourceRoot) return;
-	await createOrigamiRuntime({
+async function Be() {
+	let t = L.querySelector(".live-card-source");
+	t && (await C({
 		mode: "interactive-bridge",
-		host: liveMirrorTargetElement,
-		sourceRoot,
+		host: L,
+		sourceRoot: t,
 		paper: {
 			width: 300,
 			height: 144
 		},
 		foldOps: [{
 			id: "live-center-fold",
-			targetNodeId: ROOT_ID,
+			targetNodeId: e,
 			childNodeId: "live-right-panel",
 			line: {
 				a: {
@@ -1229,7 +964,7 @@ async function mountLiveMirrorSpike() {
 			movingSide: 1,
 			angleDeg: 26
 		}],
-		snapshotProvider: new StaticImageSnapshotProvider({
+		snapshotProvider: new b({
 			id: "live-mirror-unused-snapshot",
 			width: 300,
 			height: 144,
@@ -1238,119 +973,128 @@ async function mountLiveMirrorSpike() {
 		visual: {
 			backend: "live-mirror",
 			pseudoStates: {
-				hover: true,
-				active: true
+				hover: !0,
+				active: !0
 			}
 		}
-	}).mount();
-	liveMirrorTargetElement.dataset.liveMirrorReady = "true";
+	}).mount(), L.dataset.liveMirrorReady = "true");
 }
-async function mountFoldedCodeExamples() {
-	const blocks = Array.from(document.querySelectorAll("[data-code-fold]"));
-	await Promise.all(blocks.map(async (host, index) => {
-		const code = host.querySelector(".code-fold-source")?.textContent?.trim() || "";
-		await createOrigamiRuntime({
+var Z = [{
+	id: "code-center-fold",
+	targetNodeId: e,
+	childNodeId: "code-right-panel",
+	line: {
+		a: {
+			x: 124,
+			y: 0
+		},
+		b: {
+			x: 124,
+			y: 148
+		}
+	},
+	movingSide: 1,
+	angleDeg: -16
+}, {
+	id: "code-corner-fold",
+	targetNodeId: "code-right-panel",
+	childNodeId: "code-corner-flap",
+	line: {
+		a: {
+			x: 176,
+			y: 0
+		},
+		b: {
+			x: 248,
+			y: 46
+		}
+	},
+	movingSide: 1,
+	angleDeg: 32
+}];
+async function Ve() {
+	let e = Array.from(document.querySelectorAll("[data-code-fold]"));
+	await Promise.all(e.map(async (e, t) => {
+		let n = e.dataset.exampleMode || "static", r = e.querySelector(".code-fold-source"), i = r?.textContent?.trim() || "", a = (r = e.dataset.bridgeStatus || "idle") => ({
+			id: `code-example-${n}-${t}`,
+			width: 248,
+			height: 148,
+			url: `data:image/svg+xml,${encodeURIComponent(ze(i, n, r))}`
+		});
+		if (n === "interactive") {
+			let t = a(), n = new b(t), i = e.querySelector("[data-example-action]");
+			i?.addEventListener("click", () => {
+				e.dataset.bridgeStatus = "clicked", t.url = a("clicked").url, o.setAngle("code-corner-fold", 32);
+			});
+			let o = C({
+				mode: "interactive-bridge",
+				host: e,
+				sourceRoot: r,
+				paper: {
+					width: 248,
+					height: 148
+				},
+				foldOps: Z,
+				snapshotProvider: n
+			});
+			e.addEventListener("pointerup", (t) => {
+				let n = e.getBoundingClientRect(), r = t.clientX - n.left, a = t.clientY - n.top;
+				r >= 0 && r <= 124 && a >= 0 && a <= 148 && i?.click();
+			}), await o.mount();
+		} else if (n === "baked") {
+			let t = C({
+				mode: "baked-view",
+				host: e,
+				manifest: le({
+					paper: {
+						width: 248,
+						height: 148
+					},
+					snapshot: a(),
+					foldOps: Z
+				})
+			});
+			await t.mount(), e.dataset.bakedAngleMutable = String(t.setAngle("code-corner-fold", 0));
+		} else await C({
 			mode: "static-view",
-			host,
+			host: e,
 			paper: {
 				width: 248,
 				height: 148
 			},
-			snapshot: {
-				id: `code-example-${index}`,
-				width: 248,
-				height: 148,
-				url: `data:image/svg+xml,${encodeURIComponent(buildCodeSnapshotSvg(code))}`
-			},
-			foldOps: [{
-				id: "code-center-fold",
-				targetNodeId: ROOT_ID,
-				childNodeId: "code-right-panel",
-				line: {
-					a: {
-						x: 124,
-						y: 0
-					},
-					b: {
-						x: 124,
-						y: 148
-					}
-				},
-				movingSide: 1,
-				angleDeg: -16
-			}, {
-				id: "code-corner-fold",
-				targetNodeId: "code-right-panel",
-				childNodeId: "code-corner-flap",
-				line: {
-					a: {
-						x: 176,
-						y: 0
-					},
-					b: {
-						x: 248,
-						y: 46
-					}
-				},
-				movingSide: 1,
-				angleDeg: 32
-			}]
+			snapshot: a(),
+			foldOps: Z
 		}).mount();
-		host.dataset.rendered = "true";
+		e.dataset.rendered = "true";
 	}));
 }
-var runtime = createOrigamiRuntime({
+var Q = C({
 	mode: "interactive-bridge",
-	host: target,
-	sourceRoot: target.querySelector(".card-source"),
+	host: w,
+	sourceRoot: w.querySelector(".card-source"),
 	paper: {
 		width: 420,
 		height: 220
 	},
-	foldOps,
-	snapshotProvider: new StaticImageSnapshotProvider(snapshot)
-});
-var folded = true;
-await runtime.mount();
-setSnapshotInputValue(nameInputElement.value);
-await mountLiveMirrorSpike();
-await mountFoldedCodeExamples();
-startIntroAnimation();
-function startIntroAnimation() {
-	const start = -60;
-	const end = 0;
-	const duration = 950;
-	const startedAt = performance.now();
-	stageElement.dataset.intro = "folding";
-	delete stageElement.dataset.toolsReady;
-	const tick = (now) => {
-		const progress = Math.min(1, (now - startedAt) / duration);
-		const eased = 1 - Math.pow(1 - progress, 3);
-		const angle = Math.round(start + (end - start) * eased);
-		foldAngles["center-valley"] = angle;
-		runtime.setAngle("center-valley", angle);
-		stageElement.dataset.centerAngle = String(angle);
-		if (progress < 1) {
-			requestAnimationFrame(tick);
+	foldOps: Me,
+	snapshotProvider: new b(Y)
+}), $ = !0;
+await Q.mount(), Ae(B.value), await Be(), await Ve(), He();
+function He() {
+	let e = performance.now();
+	F.dataset.intro = "folding", delete F.dataset.toolsReady;
+	let t = (n) => {
+		let r = Math.min(1, (n - e) / 950), i = 1 - (1 - r) ** 3, a = Math.round(-60 + 60 * i);
+		if (H["center-valley"] = a, Q.setAngle("center-valley", a), F.dataset.centerAngle = String(a), r < 1) {
+			requestAnimationFrame(t);
 			return;
 		}
-		foldAngles["center-valley"] = 0;
-		runtime.setAngle("center-valley", 0);
-		stageElement.dataset.centerAngle = "0";
-		stageElement.dataset.toolsReady = "true";
-		delete stageElement.dataset.intro;
-		renderCreaseTools();
+		H["center-valley"] = 0, Q.setAngle("center-valley", 0), F.dataset.centerAngle = "0", F.dataset.toolsReady = "true", delete F.dataset.intro, K();
 	};
-	requestAnimationFrame(tick);
+	requestAnimationFrame(t);
 }
-button.addEventListener("click", () => {
-	folded = !folded;
-	foldAngles["center-valley"] = 0;
-	foldAngles["corner-mountain"] = folded ? 48 : 0;
-	runtime.setAngle("center-valley", foldAngles["center-valley"]);
-	runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
-	renderCreaseTools();
-	applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
+T.addEventListener("click", () => {
+	$ = !$, H["center-valley"] = 0, H["corner-mountain"] = $ ? 48 : 0, Q.setAngle("center-valley", H["center-valley"]), Q.setAngle("corner-mountain", H["corner-mountain"]), K(), W(U, H[U]);
 });
 //#endregion
 
