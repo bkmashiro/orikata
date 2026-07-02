@@ -50,7 +50,7 @@ baked-view:
 1. fold split 支持任意直线切 convex polygon；凹多边形和多片拓扑暂未做完整布尔处理。
 2. `localMatrix/worldMatrix` 已升级为内部 `Mat4`，renderer 通过 `cssMatrixFromMat4()` 输出 `matrix3d()`。
 3. 多层 fold 会合成 parent world matrix 和 child local matrix。
-4. hit-test 会使用变换后的 polygon 轮廓；命中后用 projected bounding box 映射回 source local point。这是 KISS 近似，足够支撑早期 click bridge。
+4. 每个 node 派生 `projectedPolygon`；hit-test 使用 projected polygon，命中后用 fan triangulation + barycentric 映射回 source local point。
 5. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
 6. interaction bridge 有简单 adapter registry；默认 click adapters + text input proxy 已覆盖早期按钮/文本输入验证。
 7. pointer synthetic adapter 保留为可选底层能力，但产品面先不扩。

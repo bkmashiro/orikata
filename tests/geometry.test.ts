@@ -116,6 +116,59 @@ describe('matrix model', () => {
 });
 
 describe('folded hit-test', () => {
+  it('stores projected polygons on derived nodes', () => {
+    const tree = buildDerivedFoldTree({
+      paper: { width: 200, height: 100 },
+      camera,
+      controls: {},
+      foldOps: [{
+        id: 'fold-right',
+        targetNodeId: ROOT_ID,
+        childNodeId: 'right',
+        line: { a: { x: 100, y: 0 }, b: { x: 100, y: 100 } },
+        movingSide: 1,
+        angleDeg: -60
+      }]
+    });
+
+    expect(tree.nodes.right.projectedPolygon).toEqual(tree.nodes.right.polygon.map((point) => {
+      const projected = mat4ApplyPoint(tree.nodes.right.worldMatrix, { ...point, z: 0 });
+      return { x: expect.closeTo(projected.x, 5), y: expect.closeTo(projected.y, 5) };
+    }));
+  });
+
+  it('maps projected triangle points back to source polygon with barycentric coordinates', () => {
+    const tree = buildDerivedFoldTree({
+      paper: { width: 100, height: 100 },
+      camera,
+      controls: {},
+      foldOps: [{
+        id: 'diag',
+        targetNodeId: ROOT_ID,
+        childNodeId: 'upper-right',
+        line: { a: { x: 0, y: 100 }, b: { x: 100, y: 0 } },
+        movingSide: -1,
+        angleDeg: 45
+      }]
+    });
+    const node = tree.nodes['upper-right'];
+    const weights = [0.2, 0.3, 0.5];
+    const foldedPoint = node.projectedPolygon.reduce((acc, point, index) => ({
+      x: acc.x + point.x * weights[index],
+      y: acc.y + point.y * weights[index]
+    }), { x: 0, y: 0 });
+    const expectedSource = node.polygon.reduce((acc, point, index) => ({
+      x: acc.x + point.x * weights[index],
+      y: acc.y + point.y * weights[index]
+    }), { x: 0, y: 0 });
+
+    const hit = hitTestFoldTree(foldedPoint, tree);
+
+    expect(hit?.nodeId).toBe('upper-right');
+    expect(hit?.localPoint.x).toBeCloseTo(expectedSource.x, 5);
+    expect(hit?.localPoint.y).toBeCloseTo(expectedSource.y, 5);
+  });
+
   it('uses transformed polygon positions for hit-testing after a fold', () => {
     const tree = buildDerivedFoldTree({
       paper: { width: 200, height: 100 },

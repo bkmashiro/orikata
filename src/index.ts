@@ -72,6 +72,7 @@ export interface FoldNode {
   id: Id;
   parentId: Id | null;
   polygon: Polygon;
+  projectedPolygon: Polygon;
   hinge: HingeLine | null;
   angleDeg: number;
   sourceOpId: Id | null;
@@ -363,6 +364,7 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       id: ROOT_ID,
       parentId: null,
       polygon: rootPolygon(documentState.paper),
+      projectedPolygon: [],
       hinge: null,
       angleDeg: 0,
       sourceOpId: null,
@@ -397,6 +399,7 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       id: op.childNodeId,
       parentId: target.id,
       polygon: childPolygon,
+      projectedPolygon: [],
       hinge: op.line,
       angleDeg: op.angleDeg,
       sourceOpId: op.id,
@@ -406,6 +409,10 @@ export function buildDerivedFoldTree(documentState: OrigamiDocumentState): Deriv
       depth: target.depth + 1,
       valid: true
     };
+  }
+
+  for (const node of Object.values(nodes)) {
+    node.projectedPolygon = transformedPolygon(node);
   }
 
   return {
@@ -449,30 +456,47 @@ function transformedPolygon(node: FoldNode): Polygon {
   });
 }
 
-function boundsOf(polygon: Polygon): { minX: number; maxX: number; minY: number; maxY: number } {
-  return polygon.reduce((bounds, point) => ({
-    minX: Math.min(bounds.minX, point.x),
-    maxX: Math.max(bounds.maxX, point.x),
-    minY: Math.min(bounds.minY, point.y),
-    maxY: Math.max(bounds.maxY, point.y)
-  }), { minX: Number.POSITIVE_INFINITY, maxX: Number.NEGATIVE_INFINITY, minY: Number.POSITIVE_INFINITY, maxY: Number.NEGATIVE_INFINITY });
+function barycentric(point: Point2, a: Point2, b: Point2, c: Point2): [number, number, number] | null {
+  const v0 = { x: b.x - a.x, y: b.y - a.y };
+  const v1 = { x: c.x - a.x, y: c.y - a.y };
+  const v2 = { x: point.x - a.x, y: point.y - a.y };
+  const d00 = v0.x * v0.x + v0.y * v0.y;
+  const d01 = v0.x * v1.x + v0.y * v1.y;
+  const d11 = v1.x * v1.x + v1.y * v1.y;
+  const d20 = v2.x * v0.x + v2.y * v0.y;
+  const d21 = v2.x * v1.x + v2.y * v1.y;
+  const denom = d00 * d11 - d01 * d01;
+  if (Math.abs(denom) < 1e-9) return null;
+  const v = (d11 * d20 - d01 * d21) / denom;
+  const w = (d00 * d21 - d01 * d20) / denom;
+  const u = 1 - v - w;
+  return [u, v, w];
+}
+
+function weightsInside(weights: [number, number, number]): boolean {
+  return weights.every((value) => value >= -1e-6 && value <= 1 + 1e-6);
 }
 
 function mapProjectedPointToSource(point: Point2, node: FoldNode): Point2 {
-  const projectedBounds = boundsOf(transformedPolygon(node));
-  const sourceBounds = boundsOf(node.polygon);
-  const u = (point.x - projectedBounds.minX) / ((projectedBounds.maxX - projectedBounds.minX) || 1);
-  const v = (point.y - projectedBounds.minY) / ((projectedBounds.maxY - projectedBounds.minY) || 1);
-  return {
-    x: sourceBounds.minX + u * (sourceBounds.maxX - sourceBounds.minX),
-    y: sourceBounds.minY + v * (sourceBounds.maxY - sourceBounds.minY)
-  };
+  const projected = node.projectedPolygon.length > 0 ? node.projectedPolygon : transformedPolygon(node);
+  for (let index = 1; index < projected.length - 1; index += 1) {
+    const weights = barycentric(point, projected[0], projected[index], projected[index + 1]);
+    if (!weights || !weightsInside(weights)) continue;
+    const sourceA = node.polygon[0];
+    const sourceB = node.polygon[index];
+    const sourceC = node.polygon[index + 1];
+    return {
+      x: sourceA.x * weights[0] + sourceB.x * weights[1] + sourceC.x * weights[2],
+      y: sourceA.y * weights[0] + sourceB.y * weights[1] + sourceC.y * weights[2]
+    };
+  }
+  return point;
 }
 
 export function hitTestFoldTree(stagePoint: Point2, tree: DerivedFoldTree): FoldHit | null {
   for (const nodeId of [...tree.renderOrder].reverse()) {
     const node = tree.nodes[nodeId];
-    if (pointInPolygon(stagePoint, transformedPolygon(node))) {
+    if (pointInPolygon(stagePoint, node.projectedPolygon)) {
       return { nodeId, localPoint: mapProjectedPointToSource(stagePoint, node) };
     }
   }
