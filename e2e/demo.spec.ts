@@ -76,15 +76,18 @@ test('live mirror backend renders visual clones and syncs folded hover state', a
 
   const live = page.locator('#liveMirrorTarget');
   await expect(live).toHaveAttribute('data-live-mirror-ready', 'true');
-  await expect(live.locator('.ori-live-mirror')).toHaveCount(3);
+  await expect(live.locator('.ori-live-mirror')).toHaveCount(4);
   await expect(live.locator('#liveMirrorButton')).toHaveCount(1);
-  await expect(live.locator('[data-fold-original-id="liveMirrorButton"]')).toHaveCount(3);
+  await expect(live.locator('[data-fold-original-id="liveMirrorButton"]')).toHaveCount(4);
   await expect(live.locator('.ori-live-mirror').first()).toHaveCSS('pointer-events', 'none');
 
   const livePanelTransform = await live.locator('[data-ori-node-id="live-right-panel"]').evaluate((node) => getComputedStyle(node).transform);
   expect(livePanelTransform).not.toBe('none');
   const liveLastPanelTransform = await live.locator('[data-ori-node-id="live-last-third-panel"]').evaluate((node) => getComputedStyle(node).transform);
   expect(liveLastPanelTransform).not.toBe('none');
+  const liveButtonFlapTransform = await live.locator('[data-ori-node-id="live-button-flap"]').evaluate((node) => getComputedStyle(node).transform);
+  expect(liveButtonFlapTransform).not.toBe('none');
+  expect(liveButtonFlapTransform).not.toBe(liveLastPanelTransform);
 
   const box = await live.boundingBox();
   expect(box).not.toBeNull();

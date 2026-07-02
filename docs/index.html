@@ -497,6 +497,18 @@
         background-size: auto, 48px 48px, 48px 48px, 12px 12px, 12px 12px;
         background-position: 0 0, -1px -1px, -1px -1px, -1px -1px, -1px -1px;
       }
+      .live-card-source::after {
+        content: "";
+        position: absolute;
+        left: 203px;
+        top: 43px;
+        width: 114px;
+        height: 0;
+        border-top: 1.4px dashed rgba(182,95,69,.52);
+        transform: rotate(40deg);
+        transform-origin: left center;
+        pointer-events: none;
+      }
       .live-card-source h3 {
         position: relative;
         margin: 0 0 8px;
@@ -631,7 +643,7 @@
         .examples, .static-showcase { grid-template-columns: 1fr; margin-top: 26px; }
       }
     </style>
-    <script type="module" crossorigin src="/main.js"></script>
+    <script type="module" crossorigin src="/assets/index-D2kd7hw0.js"></script>
   </head>
   <body>
     <main class="shell">

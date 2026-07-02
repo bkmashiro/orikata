@@ -450,6 +450,14 @@ async function mountLiveMirrorSpike(): Promise<void> {
         line: { a: { x: 200, y: 0 }, b: { x: 200, y: 144 } },
         movingSide: 1,
         angleDeg: 45
+      },
+      {
+        id: 'live-diagonal-button-fold',
+        targetNodeId: 'live-last-third-panel',
+        childNodeId: 'live-button-flap',
+        line: { a: { x: 205, y: 44 }, b: { x: 292, y: 118 } },
+        movingSide: 1,
+        angleDeg: -58
       }
     ],
     snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),
