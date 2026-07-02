@@ -52,11 +52,11 @@ baked-view:
 3. 多层 fold 会合成 parent world matrix 和 child local matrix。
 4. hit-test 会使用变换后的 polygon 轮廓；命中后用 projected bounding box 映射回 source local point。这是 KISS 近似，足够支撑早期 click bridge。
 5. visual snapshot provider 只做接口和 StaticImage provider，未内置 html-to-image / foreignObject。
-6. interaction bridge 有简单 adapter registry；默认 click adapters + 可选 pointer synthetic adapter 已覆盖早期按钮/拖拽验证。
-7. input proxy / IME / selection / native select 暂未实现。
+6. interaction bridge 有简单 adapter registry；默认 click adapters + text input proxy 已覆盖早期按钮/文本输入验证。
+7. pointer synthetic adapter 保留为可选底层能力，但产品面先不扩。
 
 ## Next slices
 
-1. 做最小 `InputProxyAdapter`，只覆盖 text input，IME/selection 先不承诺。
-2. 增加 Playwright Chromium smoke。
+1. 增加 Playwright Chromium smoke：button click + text input 两条主路径。
+2. 做一个更像真实卡片的 demo，验证 folded 后按钮/输入都能操作。
 3. 评估凹多边形/多片拓扑是否真的需要；没需求前不要引入复杂 dependency。

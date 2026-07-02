@@ -654,6 +654,51 @@ export class PointerSyntheticAdapter implements InteractionAdapter {
   }
 }
 
+export class TextInputProxyAdapter implements InteractionAdapter {
+  name = 'TextInputProxyAdapter';
+
+  match(el: HTMLElement): boolean {
+    return el instanceof HTMLInputElement && ['text', 'search', 'email', 'url', 'tel', 'password'].includes(el.type);
+  }
+
+  pointerUp(ctx: MappedEventTarget): boolean {
+    const sourceInput = ctx.sourceTarget as HTMLInputElement;
+    const activationLayer = findActivationLayer(sourceInput);
+    if (!activationLayer) return false;
+
+    const proxy = sourceInput.cloneNode(false) as HTMLInputElement;
+    proxy.removeAttribute('id');
+    proxy.classList.add('ori-input-proxy');
+    proxy.value = sourceInput.value;
+    proxy.style.position = 'absolute';
+    proxy.style.left = sourceInput.style.left || '0px';
+    proxy.style.top = sourceInput.style.top || '0px';
+    proxy.style.width = sourceInput.style.width || `${sourceInput.getBoundingClientRect().width}px`;
+    proxy.style.height = sourceInput.style.height || `${sourceInput.getBoundingClientRect().height}px`;
+    proxy.style.pointerEvents = 'auto';
+
+    activationLayer.replaceChildren(proxy);
+
+    const sync = () => {
+      sourceInput.value = proxy.value;
+      sourceInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    proxy.addEventListener('input', sync);
+    proxy.addEventListener('blur', () => {
+      sync();
+      sourceInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }, { once: true });
+    proxy.focus();
+    proxy.setSelectionRange?.(proxy.value.length, proxy.value.length);
+    return true;
+  }
+}
+
+function findActivationLayer(element: HTMLElement): HTMLElement | null {
+  const sourceLayer = element.closest('.ori-source-layer');
+  return sourceLayer?.parentElement?.querySelector<HTMLElement>(':scope > .ori-activation-layer') ?? null;
+}
+
 function dispatchSyntheticEvent(target: HTMLElement, type: string): void {
   const EventCtor = typeof PointerEvent === 'function' ? PointerEvent : Event;
   target.dispatchEvent(new EventCtor(type, { bubbles: true }));
@@ -745,7 +790,7 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
       controls: {}
     };
     this.tree = buildDerivedFoldTree(this.state);
-    this.adapters = [...(options.adapters ?? []), new ButtonAdapter(), new AnchorAdapter()];
+    this.adapters = [...(options.adapters ?? []), new TextInputProxyAdapter(), new ButtonAdapter(), new AnchorAdapter()];
     this.source = new SourceSurface(options.sourceRoot);
     setupHost(options.host, 'interactive-bridge', this.state.camera);
     ensureLayer(options.host, 'ori-source-layer').appendChild(options.sourceRoot);

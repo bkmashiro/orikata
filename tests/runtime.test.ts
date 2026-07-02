@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ROOT_ID,
   PointerSyntheticAdapter,
+  TextInputProxyAdapter,
   StaticImageSnapshotProvider,
   buildBakedOrigamiManifest,
   buildDerivedFoldTree,
@@ -183,6 +184,46 @@ describe('interactive-bridge runtime', () => {
     expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointerdown' })).toBe(true);
 
     expect(events).toEqual(['pointerdown']);
+  });
+
+  it('creates a text input proxy and syncs input back to source', async () => {
+    const host = document.createElement('div');
+    const sourceRoot = document.createElement('div');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = 'Alice';
+    input.style.position = 'absolute';
+    input.style.left = '130px';
+    input.style.top = '40px';
+    input.style.width = '50px';
+    input.style.height = '20px';
+    sourceRoot.appendChild(input);
+
+    const values: string[] = [];
+    input.addEventListener('input', () => values.push(input.value));
+
+    const runtime = createOrigamiRuntime({
+      mode: 'interactive-bridge',
+      host,
+      sourceRoot,
+      paper,
+      foldOps,
+      snapshotProvider: new StaticImageSnapshotProvider(snapshot),
+      adapters: [new TextInputProxyAdapter()]
+    });
+
+    await runtime.mount();
+    expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointerup' })).toBe(true);
+
+    const proxy = host.querySelector<HTMLInputElement>('.ori-input-proxy');
+    expect(proxy).toBeInstanceOf(HTMLInputElement);
+    expect(proxy?.value).toBe('Alice');
+
+    proxy!.value = 'Bob';
+    proxy!.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(input.value).toBe('Bob');
+    expect(values).toEqual(['Bob']);
   });
 });
 
