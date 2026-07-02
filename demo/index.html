@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fold3D Demo</title>
+    <title>Orikata Demo</title>
     <style>
       body {
         min-height: 100vh;
@@ -14,26 +14,51 @@
         color: white;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
-      .card {
-        width: min(420px, 80vw);
-        padding: 48px;
-        border-radius: 28px;
-        background: linear-gradient(135deg, #60a5fa, #a78bfa 55%, #f472b6);
-        box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
-        transform: perspective(var(--fold3d-perspective, 900px)) rotateY(var(--fold3d-angle, 0deg));
-        transform-style: preserve-3d;
-        transition: transform 180ms ease;
+      main { width: 420px; }
+      #target {
+        width: 420px;
+        height: 220px;
       }
-      button { margin-top: 24px; padding: 10px 14px; border: 0; border-radius: 999px; }
+      .card-source {
+        position: relative;
+        width: 420px;
+        height: 220px;
+        padding: 32px;
+        box-sizing: border-box;
+      }
+      .card-source button {
+        position: absolute;
+        left: 270px;
+        top: 132px;
+        width: 100px;
+        height: 36px;
+        border: 0;
+        border-radius: 999px;
+      }
+      #toggle { margin-top: 24px; padding: 10px 14px; border: 0; border-radius: 999px; }
+      .ori-source-layer {
+        opacity: 0;
+        pointer-events: auto;
+        z-index: 0;
+      }
+      .ori-visual-layer { z-index: 1; }
+      .ori-interaction-layer {
+        pointer-events: auto;
+        background: transparent;
+        z-index: 2;
+      }
     </style>
   </head>
   <body>
     <main>
-      <section class="card" id="target">
-        <h1>Fold3D</h1>
-        <p>Scaffold ready. Real segment renderer goes into src/index.ts after the design is provided.</p>
+      <section id="target">
+        <div class="card-source">
+          <h1>Orikata</h1>
+          <p>Initial runtime: static-view, interactive-bridge, and baked-view.</p>
+          <button>Source button</button>
+        </div>
       </section>
-      <button id="toggle">Toggle angle</button>
+      <button id="toggle">Toggle fold angle</button>
     </main>
     <script type="module" src="/demo/main.ts"></script>
   </body>

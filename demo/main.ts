@@ -1,14 +1,41 @@
-import { createFold3D } from '../src/index';
+import { ROOT_ID, StaticImageSnapshotProvider, createOrigamiRuntime } from '../src/index';
 
 const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
 
 if (!target || !button) throw new Error('Demo DOM is missing required elements');
 
-const fold = createFold3D(target, { angle: 0, perspective: 900 });
-let folded = false;
+const foldOps = [
+  {
+    id: 'fold-right',
+    targetNodeId: ROOT_ID,
+    childNodeId: 'right-panel',
+    line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
+    movingSide: 1 as const,
+    angleDeg: -35
+  }
+];
+
+const snapshot = {
+  id: 'demo-gradient',
+  width: 420,
+  height: 220,
+  url: 'linear-gradient(135deg, #60a5fa, #a78bfa 55%, #f472b6)'
+};
+
+const runtime = createOrigamiRuntime({
+  mode: 'interactive-bridge',
+  host: target,
+  sourceRoot: target.querySelector<HTMLElement>('.card-source')!,
+  paper: { width: 420, height: 220 },
+  foldOps,
+  snapshotProvider: new StaticImageSnapshotProvider(snapshot)
+});
+
+let folded = true;
+await runtime.mount();
 
 button.addEventListener('click', () => {
   folded = !folded;
-  fold.setAngle(folded ? -28 : 0);
+  runtime.setAngle('fold-right', folded ? -65 : 0);
 });

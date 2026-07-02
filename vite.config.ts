@@ -4,8 +4,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.ts',
-      name: 'Fold3D',
-      fileName: 'fold3d',
+      name: 'Orikata',
+      fileName: 'orikata',
       formats: ['es', 'umd']
     },
     sourcemap: true

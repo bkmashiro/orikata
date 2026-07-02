@@ -1,5 +1,5 @@
 {
-  "name": "fold3d",
+  "name": "orikata",
   "version": "0.0.0",
   "description": "Pseudo-3D origami/folding effects for DOM elements.",
   "type": "module",
@@ -10,14 +10,14 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "main": "dist/fold3d.umd.cjs",
-  "module": "dist/fold3d.js",
+  "main": "dist/orikata.umd.cjs",
+  "module": "dist/orikata.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/fold3d.js",
-      "require": "./dist/fold3d.umd.cjs"
+      "import": "./dist/orikata.js",
+      "require": "./dist/orikata.umd.cjs"
     }
   },
   "files": [
