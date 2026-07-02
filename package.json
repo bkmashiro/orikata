@@ -1,9 +1,8 @@
 {
   "name": "orikata",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Pseudo-3D origami/folding effects for DOM elements.",
   "type": "module",
-  "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.build.json && vite build",
@@ -31,5 +30,22 @@
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"
-  }
+  },
+  "license": "MIT",
+  "homepage": "https://bkmashiro.github.io/orikata/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bkmashiro/orikata.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bkmashiro/orikata/issues"
+  },
+  "keywords": [
+    "origami",
+    "fold",
+    "dom",
+    "3d",
+    "animation",
+    "vite"
+  ]
 }

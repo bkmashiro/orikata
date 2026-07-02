@@ -2,6 +2,14 @@
 
 Pseudo-3D origami/folding effects for DOM elements.
 
+- npm: https://www.npmjs.com/package/orikata
+- Demo: https://bkmashiro.github.io/orikata/
+- GitHub: https://github.com/bkmashiro/orikata
+
+```bash
+npm install orikata
+```
+
 ## 初版架构
 
 Orikata 现在有三种 runtime mode：
