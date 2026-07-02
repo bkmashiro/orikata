@@ -40,3 +40,17 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
   await expect(page.locator('#foldStage')).not.toHaveAttribute('data-center-angle', '-46');
   await expect(page.locator('#angleValue')).not.toHaveText('-46°');
 });
+
+test('crease guides are attached to folded facets instead of a flat global overlay', async ({ page }) => {
+  await page.goto('/demo/');
+
+  const centerLayer = page.locator('[data-tool-node="root"]');
+  const cornerLayer = page.locator('[data-tool-node="right-panel"]');
+  await expect(centerLayer).toHaveAttribute('data-tool-id', 'center-valley');
+  await expect(cornerLayer).toHaveAttribute('data-tool-id', 'corner-mountain');
+
+  const rightPanelTransform = await page.locator('[data-ori-node-id="right-panel"]').evaluate((node) => getComputedStyle(node).transform);
+  const cornerGuideTransform = await cornerLayer.evaluate((node) => getComputedStyle(node).transform);
+  expect(cornerGuideTransform).toBe(rightPanelTransform);
+  expect(cornerGuideTransform).not.toBe('none');
+});

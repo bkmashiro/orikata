@@ -189,14 +189,32 @@
         font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
         cursor: pointer;
       }
+      #creaseTools {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        pointer-events: none;
+        transform-style: preserve-3d;
+      }
+      .crease-tool-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        pointer-events: none;
+        overflow: visible;
+        transform-origin: 0 0;
+        transform-style: preserve-3d;
+      }
       .crease-hotspot {
         position: absolute;
-        z-index: 5;
         border: 0;
         padding: 0;
         background: transparent;
+        pointer-events: auto;
         cursor: crosshair;
       }
+      .crease-hotspot.center { left: 204px; top: 0; width: 12px; height: 220px; }
+      .crease-hotspot.corner { left: 204px; top: -4px; width: 238px; height: 18px; transform: rotate(27.2deg); transform-origin: 6px 9px; }
       .crease-hotspot[data-state="hover"]::after,
       .crease-hotspot[data-state="selected"]::after {
         content: "";
@@ -205,8 +223,6 @@
         border-radius: 999px;
         background: rgba(182, 95, 69, .1);
       }
-      .crease-hotspot.center { left: 204px; top: 0; width: 12px; height: 220px; }
-      .crease-hotspot.corner { left: 204px; top: -4px; width: 238px; height: 18px; transform: rotate(27.2deg); transform-origin: 6px 9px; }
       .fold-tool-layer {
         position: absolute;
         inset: 0;
@@ -215,7 +231,7 @@
         overflow: visible;
       }
       .candidate-line {
-        pointer-events: stroke;
+        pointer-events: none;
         cursor: crosshair;
         stroke: rgba(182, 95, 69, .68);
         stroke-width: 8;
@@ -224,7 +240,11 @@
         transition: opacity .16s ease, stroke-width .16s ease, filter .16s ease;
       }
       .candidate-line[data-state="hover"],
-      .candidate-line[data-state="selected"] {
+      .candidate-line[data-state="selected"],
+      .crease-tool-layer[data-state="hover"] .candidate-line,
+      .crease-tool-layer[data-state="selected"] .candidate-line,
+      .crease-hotspot[data-state="hover"] ~ .fold-tool-layer .candidate-line,
+      .crease-hotspot[data-state="selected"] ~ .fold-tool-layer .candidate-line {
         opacity: 1;
         stroke-width: 10;
         filter: drop-shadow(0 0 8px rgba(182, 95, 69, .25));
@@ -360,14 +380,7 @@
                   <input id="nameInput" type="text" value="Aoi" aria-label="Name" />
                   <button id="saveBtn">Save</button>
                 </div>
-                <svg class="fold-tool-layer" viewBox="0 0 420 220" aria-hidden="true">
-                  <line class="candidate-guide" x1="210" y1="0" x2="210" y2="220" />
-                  <line class="candidate-line" data-fold-visual="center-valley" data-state="selected" x1="210" y1="0" x2="210" y2="220" />
-                  <line class="candidate-guide" x1="210" y1="0" x2="420" y2="108" />
-                  <line class="candidate-line" data-fold-visual="corner-mountain" data-state="idle" x1="210" y1="0" x2="420" y2="108" />
-                </svg>
-                <button class="crease-hotspot center" type="button" aria-label="select center valley crease" data-fold-candidate="center-valley" data-state="selected"></button>
-                <button class="crease-hotspot corner" type="button" aria-label="select corner mountain crease" data-fold-candidate="corner-mountain" data-state="idle"></button>
+                <div id="creaseTools" aria-hidden="true"></div>
               </section>
               <div class="toolbox" aria-label="Fold editor controls">
                 <div>

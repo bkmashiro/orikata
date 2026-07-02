@@ -11,10 +11,9 @@ const activeFoldName = document.querySelector<HTMLElement>('#activeFoldName');
 const angleValue = document.querySelector<HTMLElement>('#angleValue');
 const angleDial = document.querySelector<HTMLElement>('#angleDial');
 const angleHand = document.querySelector<HTMLElement>('#angleHand');
-const candidateLines = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-fold-candidate]'));
-const candidateVisuals = Array.from(document.querySelectorAll<SVGLineElement>('[data-fold-visual]'));
+const creaseTools = document.querySelector<HTMLElement>('#creaseTools');
 
-if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand) {
+if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error('Demo DOM is missing required elements');
 }
 
@@ -23,6 +22,8 @@ const activeNameElement = activeFoldName;
 const angleValueElement = angleValue;
 const angleDialElement = angleDial;
 const angleHandElement = angleHand;
+const creaseToolHost = creaseTools;
+const targetElement = target;
 
 let clicks = 0;
 saveBtn.addEventListener('click', () => {
@@ -65,6 +66,7 @@ let activeFoldId = 'center-valley';
 function applyFoldAngle(id: string, angle: number): void {
   foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
   runtime?.setAngle(id, foldAngles[id]);
+  renderCreaseTools();
   stageElement.dataset.activeFold = activeFoldId;
   stageElement.dataset.centerAngle = String(foldAngles['center-valley']);
   stageElement.dataset.cornerAngle = String(foldAngles['corner-mountain']);
@@ -74,31 +76,82 @@ function applyFoldAngle(id: string, angle: number): void {
 }
 
 function setCandidateState(id: string, state: 'idle' | 'hover' | 'selected'): void {
-  for (const line of candidateLines) {
-    if (line.dataset.foldCandidate === id) line.dataset.state = state;
+  for (const line of targetElement.querySelectorAll<HTMLElement>('[data-fold-candidate], .crease-tool-layer[data-tool-id]')) {
+    if (line.dataset.foldCandidate === id || line.dataset.toolId === id) line.dataset.state = state;
   }
-  for (const visual of candidateVisuals) {
-    if (visual.dataset.foldVisual === id) visual.dataset.state = state;
+}
+
+const creaseGuides = [
+  {
+    id: 'center-valley',
+    nodeId: ROOT_ID,
+    guide: { x1: 210, y1: 0, x2: 210, y2: 220 },
+    hot: { x1: 210, y1: 0, x2: 210, y2: 220 }
+  },
+  {
+    id: 'corner-mountain',
+    nodeId: 'right-panel',
+    guide: { x1: 210, y1: 0, x2: 420, y2: 108 },
+    hot: { x1: 210, y1: 0, x2: 420, y2: 108 }
+  }
+] as const;
+
+function svgLine(attrs: Record<string, string | number>, className: string): SVGLineElement {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('class', className);
+  for (const [key, value] of Object.entries(attrs)) line.setAttribute(key, String(value));
+  return line;
+}
+
+function renderCreaseTools(): void {
+  creaseToolHost.remove();
+  for (const oldLayer of targetElement.querySelectorAll(':scope > .crease-tool-layer')) oldLayer.remove();
+  for (const guide of creaseGuides) {
+    const foldedNode = targetElement.querySelector<HTMLElement>(`[data-ori-node-id="${guide.nodeId}"]`);
+    if (!foldedNode) continue;
+
+    const layer = document.createElement('div');
+    layer.className = 'crease-tool-layer';
+    layer.dataset.toolNode = guide.nodeId;
+    layer.dataset.toolId = guide.id;
+    layer.dataset.state = guide.id === activeFoldId ? 'selected' : 'idle';
+    layer.style.transform = foldedNode.style.transform || getComputedStyle(foldedNode).transform;
+
+    const hotspot = document.createElement('button');
+    hotspot.type = 'button';
+    hotspot.className = `crease-hotspot ${guide.id === 'center-valley' ? 'center' : 'corner'}`;
+    hotspot.dataset.foldCandidate = guide.id;
+    hotspot.dataset.state = guide.id === activeFoldId ? 'selected' : 'idle';
+    hotspot.setAttribute('aria-label', `select ${foldLabels[guide.id]} crease`);
+    hotspot.addEventListener('mouseenter', () => {
+      if (guide.id !== activeFoldId) setCandidateState(guide.id, 'hover');
+    });
+    hotspot.addEventListener('mouseleave', () => {
+      if (guide.id !== activeFoldId) setCandidateState(guide.id, 'idle');
+    });
+    hotspot.addEventListener('click', (event) => {
+      event.stopPropagation();
+      setActiveFold(guide.id);
+    });
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'fold-tool-layer');
+    svg.setAttribute('viewBox', '0 0 420 220');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.appendChild(svgLine(guide.guide, 'candidate-guide'));
+    svg.appendChild(svgLine(guide.hot, 'candidate-line'));
+
+    layer.appendChild(hotspot);
+    layer.appendChild(svg);
+    targetElement.appendChild(layer);
   }
 }
 
 function setActiveFold(id: string): void {
   activeFoldId = id;
   activeNameElement.textContent = foldLabels[id] ?? id;
-  for (const line of candidateLines) setCandidateState(line.dataset.foldCandidate ?? '', line.dataset.foldCandidate === id ? 'selected' : 'idle');
+  for (const guide of creaseGuides) setCandidateState(guide.id, guide.id === id ? 'selected' : 'idle');
   applyFoldAngle(id, foldAngles[id] ?? 0);
-}
-
-for (const line of candidateLines) {
-  line.addEventListener('mouseenter', () => {
-    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'hover');
-  });
-  line.addEventListener('mouseleave', () => {
-    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'idle');
-  });
-  line.addEventListener('click', () => {
-    setActiveFold(line.dataset.foldCandidate ?? 'center-valley');
-  });
 }
 
 function angleFromPointer(event: PointerEvent): number {
@@ -178,9 +231,14 @@ const runtime = createOrigamiRuntime({
 
 let folded = true;
 await runtime.mount();
+renderCreaseTools();
 
 button.addEventListener('click', () => {
   folded = !folded;
-  runtime.setAngle('center-valley', folded ? -46 : 0);
-  runtime.setAngle('corner-mountain', folded ? 28 : 0);
+  foldAngles['center-valley'] = folded ? -46 : 0;
+  foldAngles['corner-mountain'] = folded ? 28 : 0;
+  runtime.setAngle('center-valley', foldAngles['center-valley']);
+  runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
+  renderCreaseTools();
+  applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
 });
