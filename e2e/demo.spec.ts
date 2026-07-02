@@ -4,7 +4,7 @@ async function waitForIntro(page: import('@playwright/test').Page): Promise<void
   await expect(page.locator('#foldStage')).toHaveAttribute('data-tools-ready', 'true');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '80');
 }
 
 test('install command copies and folded demo bridges button feedback and text input', async ({ page }) => {
@@ -56,7 +56,7 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
   await expect(page.locator('#foldStage')).toHaveAttribute('data-active-fold', 'quarter-fold-3');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold1-angle', '45');
   await expect(page.locator('#foldStage')).toHaveAttribute('data-fold2-angle', '-45');
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '45');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-fold3-angle', '80');
   await expect(third).toHaveAttribute('data-state', 'selected');
 
   const second = page.locator('[data-fold-candidate="quarter-fold-2"]');
@@ -98,12 +98,12 @@ test('live mirror backend renders visual clones and syncs folded hover state', a
   await live.scrollIntoViewIfNeeded();
   const visibleBox = await live.boundingBox();
   expect(visibleBox).not.toBeNull();
-  await page.mouse.move(visibleBox!.x + 224, visibleBox!.y + 74);
+  await page.mouse.move(visibleBox!.x + 200, visibleBox!.y + 74);
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveCSS('background-color', 'rgb(182, 95, 69)');
   await page.mouse.move(visibleBox!.x - 24, visibleBox!.y - 24);
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]')).toHaveCount(0);
-  await page.mouse.move(visibleBox!.x + 224, visibleBox!.y + 74);
+  await page.mouse.move(visibleBox!.x + 200, visibleBox!.y + 74);
   await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
   await expect(live.locator('.ori-live-mirror .live-shine').first()).toHaveCSS('animation-name', 'live-shine');
   await expect(live.locator('.ori-live-mirror [data-fold-original-id="liveMirrorButton"]').first()).toHaveCSS('overflow', 'hidden');

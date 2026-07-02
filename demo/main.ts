@@ -83,7 +83,7 @@ nameInputElement.addEventListener('input', () => {
 const mainFoldPlan = createFoldPlan({ width: 420, height: 220 })
   .foldRight({ id: 'quarter-fold-1', childId: 'right-three-quarter-panel', x: 105, angle: 45 })
   .foldRight({ id: 'quarter-fold-2', childId: 'right-half-panel', target: 'right-three-quarter-panel', x: 210, angle: -45 })
-  .foldRight({ id: 'quarter-fold-3', childId: 'right-quarter-panel', target: 'right-half-panel', x: 315, angle: 45 });
+  .foldRight({ id: 'quarter-fold-3', childId: 'right-quarter-panel', target: 'right-half-panel', x: 315, angle: 80 });
 
 const foldOps = mainFoldPlan.foldOps;
 const foldPlanInspection = inspectFoldPlan({ paper: { width: 420, height: 220 }, foldOps });
@@ -94,7 +94,7 @@ if (foldPlanInspection.warnings.length > 0) {
 const foldAngles: Record<string, number> = {
   'quarter-fold-1': 45,
   'quarter-fold-2': -45,
-  'quarter-fold-3': 45
+  'quarter-fold-3': 80
 };
 const foldLabels: Record<string, string> = {
   'quarter-fold-1': 'quarter fold 1',
@@ -469,7 +469,7 @@ async function mountLiveMirrorSpike(): Promise<void> {
         childNodeId: 'live-right-quarter-panel',
         line: { a: { x: 225, y: 0 }, b: { x: 225, y: 144 } },
         movingSide: 1,
-        angleDeg: 45
+        angleDeg: 80
       }
     ],
     snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),
@@ -578,7 +578,7 @@ button.addEventListener('click', () => {
   folded = !folded;
   foldAngles['quarter-fold-1'] = folded ? 45 : 0;
   foldAngles['quarter-fold-2'] = folded ? -45 : 0;
-  foldAngles['quarter-fold-3'] = folded ? 45 : 0;
+  foldAngles['quarter-fold-3'] = folded ? 80 : 0;
   runtime.setAngles?.([
     { opId: 'quarter-fold-1', angleDeg: foldAngles['quarter-fold-1'] },
     { opId: 'quarter-fold-2', angleDeg: foldAngles['quarter-fold-2'] },
