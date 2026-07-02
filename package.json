@@ -1,6 +1,6 @@
 {
   "name": "orikata",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pseudo-3D origami/folding effects for DOM elements.",
   "type": "module",
   "scripts": {
