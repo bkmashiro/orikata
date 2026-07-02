@@ -612,14 +612,17 @@ var target = document.querySelector("#target");
 var button = document.querySelector("#toggle");
 var saveBtn = document.querySelector("#saveBtn");
 var nameInput = document.querySelector("#nameInput");
-var saveFeedback = document.querySelector("#saveFeedback");
+var visualSave = document.querySelector("#visualSave");
+var typedValue = document.querySelector("#typedValue");
+var copyInstall = document.querySelector("#copyInstall");
+var installCommand = document.querySelector("#installCommand");
 var foldStage = document.querySelector("#foldStage");
 var activeFoldName = document.querySelector("#activeFoldName");
 var angleValue = document.querySelector("#angleValue");
 var angleDial = document.querySelector("#angleDial");
 var angleHand = document.querySelector("#angleHand");
 var creaseTools = document.querySelector("#creaseTools");
-if (!target || !button || !saveBtn || !nameInput || !saveFeedback || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !visualSave || !typedValue || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error("Demo DOM is missing required elements");
 }
 var stageElement = foldStage;
@@ -629,12 +632,46 @@ var angleDialElement = angleDial;
 var angleHandElement = angleHand;
 var creaseToolHost = creaseTools;
 var targetElement = target;
+var visualSaveElement = visualSave;
+var typedValueElement = typedValue;
+var copyInstallButton = copyInstall;
+var installCommandElement = installCommand;
+copyInstallButton.addEventListener("click", async () => {
+  const command = installCommandElement.textContent?.trim() || "npm install orikata";
+  try {
+    await navigator.clipboard?.writeText(command);
+  } catch {
+    const scratch = document.createElement("textarea");
+    scratch.value = command;
+    scratch.style.position = "fixed";
+    scratch.style.opacity = "0";
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+  copyInstallButton.textContent = "copied";
+  window.setTimeout(() => {
+    copyInstallButton.textContent = "copy";
+  }, 1100);
+});
+function setVisualInputValue(value) {
+  typedValueElement.textContent = value || "\xA0";
+  targetElement.dataset.inputValue = value;
+}
+targetElement.addEventListener("focusin", (event) => {
+  if (event.target.classList?.contains("ori-input-proxy")) targetElement.dataset.inputActive = "true";
+});
+targetElement.addEventListener("focusout", (event) => {
+  if (event.target.classList?.contains("ori-input-proxy")) delete targetElement.dataset.inputActive;
+});
 var feedbackTimer;
 saveBtn.addEventListener("click", () => {
   window.clearTimeout(feedbackTimer);
   const baseAngle = foldAngles["corner-mountain"];
   saveBtn.textContent = "Saved";
-  saveFeedback.textContent = "saved \u2014 flap responds";
+  visualSaveElement.textContent = "Saved";
+  visualSaveElement.dataset.state = "saved";
   stageElement.dataset.feedback = "saved";
   runtime?.setAngle("corner-mountain", Math.min(72, baseAngle + 10));
   renderCreaseTools();
@@ -642,12 +679,13 @@ saveBtn.addEventListener("click", () => {
     runtime?.setAngle("corner-mountain", baseAngle);
     renderCreaseTools();
     saveBtn.textContent = "Save";
-    saveFeedback.textContent = "";
+    visualSaveElement.textContent = "Save";
+    delete visualSaveElement.dataset.state;
     delete stageElement.dataset.feedback;
   }, 620);
 });
 nameInput.addEventListener("input", () => {
-  targetElement.dataset.inputValue = nameInput.value;
+  setVisualInputValue(nameInput.value);
 });
 var foldOps = [
   {
@@ -656,7 +694,7 @@ var foldOps = [
     childNodeId: "right-panel",
     line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
     movingSide: 1,
-    angleDeg: 0
+    angleDeg: -60
   },
   {
     id: "corner-mountain",
@@ -668,7 +706,7 @@ var foldOps = [
   }
 ];
 var foldAngles = {
-  "center-valley": 0,
+  "center-valley": -60,
   "corner-mountain": 48
 };
 var foldLabels = {
@@ -828,7 +866,35 @@ var runtime = createOrigamiRuntime({
 });
 var folded = true;
 await runtime.mount();
-renderCreaseTools();
+setVisualInputValue(nameInput.value);
+startIntroAnimation();
+function startIntroAnimation() {
+  const start = -60;
+  const end = 0;
+  const duration = 950;
+  const startedAt = performance.now();
+  stageElement.dataset.intro = "folding";
+  delete stageElement.dataset.toolsReady;
+  const tick = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const angle = Math.round(start + (end - start) * eased);
+    foldAngles["center-valley"] = angle;
+    runtime.setAngle("center-valley", angle);
+    stageElement.dataset.centerAngle = String(angle);
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    foldAngles["center-valley"] = 0;
+    runtime.setAngle("center-valley", 0);
+    stageElement.dataset.centerAngle = "0";
+    stageElement.dataset.toolsReady = "true";
+    delete stageElement.dataset.intro;
+    renderCreaseTools();
+  };
+  requestAnimationFrame(tick);
+}
 button.addEventListener("click", () => {
   folded = !folded;
   foldAngles["center-valley"] = 0;

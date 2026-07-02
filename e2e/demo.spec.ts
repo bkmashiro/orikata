@@ -1,24 +1,35 @@
 import { test, expect } from '@playwright/test';
 
-test('folded demo bridges button feedback and text input', async ({ page }) => {
+async function waitForIntro(page: import('@playwright/test').Page): Promise<void> {
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-tools-ready', 'true');
+  await expect(page.locator('#foldStage')).toHaveAttribute('data-center-angle', '0');
+}
+
+test('install command copies and folded demo bridges button feedback and text input', async ({ page }) => {
   await page.goto('/demo/');
+  await waitForIntro(page);
+
+  await page.locator('#copyInstall').click();
+  await expect(page.locator('#copyInstall')).toHaveText('copied');
 
   const target = await page.locator('#target').boundingBox();
   expect(target).not.toBeNull();
 
   await expect(page.locator('#clickCount')).toHaveCount(0);
   await expect(page.locator('#sourceValue')).toHaveCount(0);
+  await expect(page.locator('#saveFeedback')).toHaveCount(0);
 
   const initialFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
   await page.mouse.click(target!.x + 290, target!.y + 150);
-  await expect(page.locator('#saveFeedback')).toHaveText(/saved/i);
-  await expect(page.locator('#foldStage')).toHaveAttribute('data-feedback', 'saved');
+  await expect(page.locator('#visualSave')).toHaveText('Saved');
+  await expect(page.locator('#visualSave')).toHaveAttribute('data-state', 'saved');
   const feedbackFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
   expect(feedbackFlapTransform).not.toBe(initialFlapTransform);
 
   await page.mouse.click(target!.x + 290, target!.y + 97);
   const proxy = page.locator('.ori-input-proxy');
-  await expect(proxy).toBeVisible();
+  await expect(proxy).toBeAttached();
+  await expect(proxy).toHaveCSS('opacity', '0');
   const proxyBox = await proxy.boundingBox();
   expect(proxyBox).not.toBeNull();
   expect(proxyBox!.x).toBeGreaterThan(target!.x + 250);
@@ -26,10 +37,12 @@ test('folded demo bridges button feedback and text input', async ({ page }) => {
   await proxy.fill('Bob');
 
   await expect(page.locator('#nameInput')).toHaveValue('Bob');
+  await expect(page.locator('#typedValue')).toHaveText('Bob');
 });
 
 test('fold tooling highlights candidate lines and edits the selected angle with a dial', async ({ page }) => {
   await page.goto('/demo/');
+  await waitForIntro(page);
 
   const corner = page.locator('[data-fold-candidate="corner-mountain"]');
   await expect(corner).toBeAttached();
@@ -54,6 +67,7 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
 
 test('crease guides are attached to folded facets instead of a flat global overlay', async ({ page }) => {
   await page.goto('/demo/');
+  await waitForIntro(page);
 
   const centerLayer = page.locator('[data-tool-node="root"]');
   const cornerLayer = page.locator('[data-tool-node="right-panel"]');

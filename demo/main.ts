@@ -4,7 +4,10 @@ const target = document.querySelector<HTMLElement>('#target');
 const button = document.querySelector<HTMLButtonElement>('#toggle');
 const saveBtn = document.querySelector<HTMLButtonElement>('#saveBtn');
 const nameInput = document.querySelector<HTMLInputElement>('#nameInput');
-const saveFeedback = document.querySelector<HTMLElement>('#saveFeedback');
+const visualSave = document.querySelector<HTMLElement>('#visualSave');
+const typedValue = document.querySelector<HTMLElement>('#typedValue');
+const copyInstall = document.querySelector<HTMLButtonElement>('#copyInstall');
+const installCommand = document.querySelector<HTMLElement>('#installCommand');
 const foldStage = document.querySelector<HTMLElement>('#foldStage');
 const activeFoldName = document.querySelector<HTMLElement>('#activeFoldName');
 const angleValue = document.querySelector<HTMLElement>('#angleValue');
@@ -12,7 +15,7 @@ const angleDial = document.querySelector<HTMLElement>('#angleDial');
 const angleHand = document.querySelector<HTMLElement>('#angleHand');
 const creaseTools = document.querySelector<HTMLElement>('#creaseTools');
 
-if (!target || !button || !saveBtn || !nameInput || !saveFeedback || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !visualSave || !typedValue || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error('Demo DOM is missing required elements');
 }
 
@@ -23,13 +26,48 @@ const angleDialElement = angleDial;
 const angleHandElement = angleHand;
 const creaseToolHost = creaseTools;
 const targetElement = target;
+const visualSaveElement = visualSave;
+const typedValueElement = typedValue;
+const copyInstallButton = copyInstall;
+const installCommandElement = installCommand;
+
+copyInstallButton.addEventListener('click', async () => {
+  const command = installCommandElement.textContent?.trim() || 'npm install orikata';
+  try {
+    await navigator.clipboard?.writeText(command);
+  } catch {
+    const scratch = document.createElement('textarea');
+    scratch.value = command;
+    scratch.style.position = 'fixed';
+    scratch.style.opacity = '0';
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand('copy');
+    scratch.remove();
+  }
+  copyInstallButton.textContent = 'copied';
+  window.setTimeout(() => { copyInstallButton.textContent = 'copy'; }, 1100);
+});
+
+function setVisualInputValue(value: string): void {
+  typedValueElement.textContent = value || '\u00a0';
+  targetElement.dataset.inputValue = value;
+}
+
+targetElement.addEventListener('focusin', (event) => {
+  if ((event.target as HTMLElement).classList?.contains('ori-input-proxy')) targetElement.dataset.inputActive = 'true';
+});
+targetElement.addEventListener('focusout', (event) => {
+  if ((event.target as HTMLElement).classList?.contains('ori-input-proxy')) delete targetElement.dataset.inputActive;
+});
 
 let feedbackTimer: number | undefined;
 saveBtn.addEventListener('click', () => {
   window.clearTimeout(feedbackTimer);
   const baseAngle = foldAngles['corner-mountain'];
   saveBtn.textContent = 'Saved';
-  saveFeedback.textContent = 'saved — flap responds';
+  visualSaveElement.textContent = 'Saved';
+  visualSaveElement.dataset.state = 'saved';
   stageElement.dataset.feedback = 'saved';
   runtime?.setAngle('corner-mountain', Math.min(72, baseAngle + 10));
   renderCreaseTools();
@@ -38,12 +76,13 @@ saveBtn.addEventListener('click', () => {
     runtime?.setAngle('corner-mountain', baseAngle);
     renderCreaseTools();
     saveBtn.textContent = 'Save';
-    saveFeedback.textContent = '';
+    visualSaveElement.textContent = 'Save';
+    delete visualSaveElement.dataset.state;
     delete stageElement.dataset.feedback;
   }, 620);
 });
 nameInput.addEventListener('input', () => {
-  targetElement.dataset.inputValue = nameInput.value;
+  setVisualInputValue(nameInput.value);
 });
 
 const foldOps = [
@@ -53,7 +92,7 @@ const foldOps = [
     childNodeId: 'right-panel',
     line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
     movingSide: 1 as const,
-    angleDeg: 0
+    angleDeg: -60
   },
   {
     id: 'corner-mountain',
@@ -66,7 +105,7 @@ const foldOps = [
 ];
 
 const foldAngles: Record<string, number> = {
-  'center-valley': 0,
+  'center-valley': -60,
   'corner-mountain': 48
 };
 const foldLabels: Record<string, string> = {
@@ -243,7 +282,40 @@ const runtime = createOrigamiRuntime({
 
 let folded = true;
 await runtime.mount();
-renderCreaseTools();
+setVisualInputValue(nameInput.value);
+startIntroAnimation();
+
+function startIntroAnimation(): void {
+  const start = -60;
+  const end = 0;
+  const duration = 950;
+  const startedAt = performance.now();
+  stageElement.dataset.intro = 'folding';
+  delete stageElement.dataset.toolsReady;
+
+  const tick = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const angle = Math.round(start + (end - start) * eased);
+    foldAngles['center-valley'] = angle;
+    runtime.setAngle('center-valley', angle);
+    stageElement.dataset.centerAngle = String(angle);
+
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    foldAngles['center-valley'] = 0;
+    runtime.setAngle('center-valley', 0);
+    stageElement.dataset.centerAngle = '0';
+    stageElement.dataset.toolsReady = 'true';
+    delete stageElement.dataset.intro;
+    renderCreaseTools();
+  };
+
+  requestAnimationFrame(tick);
+}
 
 button.addEventListener('click', () => {
   folded = !folded;

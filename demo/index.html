@@ -108,16 +108,32 @@
         font-size: 15px;
         line-height: 1.8;
       }
-      .install {
+      .install-wrap {
         display: inline-flex;
+        align-items: center;
+        gap: 6px;
         margin-top: 18px;
-        padding: 8px 12px;
+        padding: 4px;
         border: 1px solid var(--line);
         border-radius: 999px;
         background: rgba(255,255,255,.28);
+      }
+      .install {
+        padding: 5px 8px;
         color: var(--sumi);
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 12px;
+      }
+      .copy-install {
+        border: 0;
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: var(--paper);
+        background: var(--sumi);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 11px;
+        letter-spacing: .05em;
+        cursor: pointer;
       }
       .stage {
         width: min(100%, 620px);
@@ -188,6 +204,54 @@
         background: var(--sumi);
         font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
         cursor: pointer;
+      }
+      .typed-value,
+      .visual-save {
+        position: absolute;
+        left: 270px;
+        width: 100px;
+        z-index: 24;
+        pointer-events: none;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .typed-value {
+        top: 82px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        padding: 0 9px;
+        border: 1px solid rgba(31,36,32,.3);
+        color: var(--ink);
+        background: rgba(255,255,255,.74);
+        font-size: 13px;
+      }
+      #target[data-input-active="true"] .typed-value {
+        border-color: rgba(182, 95, 69, .72);
+        box-shadow: 0 0 0 3px rgba(182, 95, 69, .08);
+      }
+      .visual-save {
+        top: 132px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(31,36,32,.22);
+        color: var(--paper);
+        background: var(--sumi);
+        font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+        font-size: 13px;
+      }
+      .visual-save[data-state="saved"] {
+        animation: save-press .62s ease;
+      }
+      @keyframes save-press {
+        0%, 100% { transform: scale(1); background: var(--sumi); }
+        35% { transform: scale(.94); background: var(--vermilion); }
+      }
+      .ori-input-proxy {
+        opacity: 0;
+        caret-color: transparent;
+        color: transparent;
+        background: transparent !important;
       }
       #creaseTools {
         position: absolute;
@@ -312,25 +376,39 @@
         background: transparent;
         cursor: pointer;
       }
-      .feedback {
-        min-width: 126px;
-        color: var(--vermilion);
-        font-size: 12px;
-        letter-spacing: .06em;
-        opacity: 0;
-        transform: translateY(3px);
-        transition: opacity .18s ease, transform .18s ease;
+      .examples {
+        width: min(920px, 100%);
+        margin: 42px auto 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        text-align: left;
       }
-      .stage[data-feedback="saved"] .feedback {
-        opacity: 1;
-        transform: translateY(0);
+      .example-card {
+        min-height: 178px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.22);
       }
-      .stage[data-feedback="saved"] #target {
-        animation: target-breathe .62s ease;
+      .example-card h3 {
+        margin: 0 0 10px;
+        font-weight: 500;
+        letter-spacing: .04em;
       }
-      @keyframes target-breathe {
-        0%, 100% { filter: none; }
-        35% { filter: drop-shadow(0 12px 24px rgba(182, 95, 69, .18)); }
+      .example-card p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .example-card pre {
+        margin: 0;
+        white-space: pre-wrap;
+        color: var(--sumi);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        line-height: 1.55;
       }
       .caption {
         max-width: 580px;
@@ -361,6 +439,7 @@
         .demo-scale { width: 420px; transform: scale(.78); transform-origin: top center; margin: 0 auto -46px; }
         .fold-note { padding: 0 8px; }
         .jp { letter-spacing: .28em; }
+        .examples { grid-template-columns: 1fr; margin-top: 26px; }
       }
     </style>
   </head>
@@ -386,10 +465,13 @@
             <div class="eyebrow">folded DOM runtime</div>
             <h1>Orikata<span class="jp">折り方</span></h1>
             <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo now treats the center line as a pre-crease, then folds only a small diagonal corner flap on patterned washi.</p>
-            <code class="install">npm install orikata</code>
+            <div class="install-wrap">
+              <code class="install" id="installCommand">npm install orikata</code>
+              <button class="copy-install" id="copyInstall" type="button" aria-label="copy install command">copy</button>
+            </div>
           </div>
 
-          <section class="stage" id="foldStage" data-active-fold="corner-mountain" data-center-angle="0" data-corner-angle="48" aria-label="Interactive Orikata demo">
+          <section class="stage" id="foldStage" data-active-fold="corner-mountain" data-center-angle="-60" data-corner-angle="48" aria-label="Interactive Orikata demo">
             <div class="fold-note"><strong>升箱の折り目</strong><span>hover a crease, click to rotate</span></div>
             <div class="demo-scale">
               <section id="target" aria-label="Folded patterned DOM demo">
@@ -399,6 +481,8 @@
                   <input id="nameInput" type="text" value="Aoi" aria-label="Name" />
                   <button id="saveBtn">Save</button>
                 </div>
+                <div id="typedValue" class="typed-value" aria-hidden="true">Aoi</div>
+                <div id="visualSave" class="visual-save" aria-hidden="true">Save</div>
                 <div id="creaseTools" aria-hidden="true"></div>
               </section>
               <div class="toolbox" aria-label="Fold editor controls">
@@ -412,10 +496,40 @@
               </div>
               <div class="controls">
                 <button id="toggle">open / fold</button>
-                <span id="saveFeedback" class="feedback" aria-live="polite"></span>
               </div>
             </div>
             <p class="caption">Step 1 is a flat center pre-crease; step 2 folds a local corner flap on the already-defined right panel. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
+          </section>
+
+          <section class="examples" aria-label="Orikata examples">
+            <article class="example-card">
+              <h3>Static view</h3>
+              <p>Use fixed geometry as a decorative folded surface.</p>
+              <pre><code>createOrigamiRuntime({
+  mode: 'static-view',
+  host, paper, foldOps,
+  snapshot
+});</code></pre>
+            </article>
+            <article class="example-card">
+              <h3>Interactive bridge</h3>
+              <p>Keep one real DOM tree; map folded clicks back to source controls.</p>
+              <pre><code>createOrigamiRuntime({
+  mode: 'interactive-bridge',
+  host, sourceRoot,
+  snapshotProvider
+});</code></pre>
+            </article>
+            <article class="example-card">
+              <h3>Baked view</h3>
+              <p>Precompute pieces when angles are known and render cheaply.</p>
+              <pre><code>const manifest =
+  buildBakedOrigamiManifest(doc);
+createOrigamiRuntime({
+  mode: 'baked-view',
+  host, manifest
+});</code></pre>
+            </article>
           </section>
 
           <div class="footer">
