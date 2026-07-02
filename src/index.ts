@@ -438,6 +438,25 @@ function polygonToClipPath(polygon: Polygon): string {
   return `polygon(${polygon.map((point) => `${point.x}px ${point.y}px`).join(', ')})`;
 }
 
+function polygonToBleedClipPath(polygon: Polygon, bleedPx: number): string {
+  if (bleedPx <= 0 || polygon.length === 0) return polygonToClipPath(polygon);
+  const centroid = polygon.reduce(
+    (acc, point) => ({ x: acc.x + point.x / polygon.length, y: acc.y + point.y / polygon.length }),
+    { x: 0, y: 0 }
+  );
+  const expanded = polygon.map((point) => {
+    const dx = point.x - centroid.x;
+    const dy = point.y - centroid.y;
+    const length = Math.hypot(dx, dy);
+    if (length === 0) return point;
+    return {
+      x: point.x + dx / length * bleedPx,
+      y: point.y + dy / length * bleedPx
+    };
+  });
+  return polygonToClipPath(expanded);
+}
+
 function pointOnSegment(point: Point2, a: Point2, b: Point2): boolean {
   const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
   if (Math.abs(cross) > 1e-6) return false;
@@ -657,7 +676,7 @@ class LiveMirrorRenderer {
       const dom = this.ensureFragment(piece.nodeId);
       dom.fragmentEl.dataset.oriNodeId = piece.nodeId;
       dom.fragmentEl.style.transform = piece.transform;
-      dom.clipEl.style.clipPath = piece.clipPath;
+      dom.clipEl.style.clipPath = polygonToBleedClipPath(piece.polygon, 0.75);
       this.rootElement.appendChild(dom.fragmentEl);
     }
 

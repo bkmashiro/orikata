@@ -231,8 +231,25 @@ function h(t) {
 		invalidOps: i
 	};
 }
-function te(e) {
+function g(e) {
 	return `polygon(${e.map((e) => `${e.x}px ${e.y}px`).join(", ")})`;
+}
+function te(e, t) {
+	if (t <= 0 || e.length === 0) return g(e);
+	let n = e.reduce((t, n) => ({
+		x: t.x + n.x / e.length,
+		y: t.y + n.y / e.length
+	}), {
+		x: 0,
+		y: 0
+	});
+	return g(e.map((e) => {
+		let r = e.x - n.x, i = e.y - n.y, a = Math.hypot(r, i);
+		return a === 0 ? e : {
+			x: e.x + r / a * t,
+			y: e.y + i / a * t
+		};
+	}));
 }
 function ne(e, t, n) {
 	let r = (e.y - t.y) * (n.x - t.x) - (e.x - t.x) * (n.y - t.y);
@@ -307,13 +324,13 @@ function ce(e, t) {
 	}
 	return null;
 }
-function g(e, t) {
+function _(e, t) {
 	return e.renderOrder.map((n) => {
 		let r = e.nodes[n];
 		return {
 			nodeId: n,
 			polygon: r.polygon,
-			clipPath: te(r.polygon),
+			clipPath: g(r.polygon),
 			transform: p(r.worldMatrix),
 			backgroundPosition: "0px 0px",
 			backgroundSize: `${t.width}px ${t.height}px`
@@ -332,10 +349,10 @@ function le(e) {
 		paper: e.paper,
 		camera: r,
 		snapshot: e.snapshot,
-		pieces: g(i, e.paper)
+		pieces: _(i, e.paper)
 	};
 }
-var _ = class {
+var v = class {
 	rootElement;
 	snapshot = null;
 	constructor(e) {
@@ -372,7 +389,7 @@ var _ = class {
 	getKey(e) {
 		return this.keyByElement.get(e) ?? e.dataset.foldKey;
 	}
-}, v = class {
+}, y = class {
 	sourceRoot;
 	keyRegistry;
 	rootElement;
@@ -386,7 +403,7 @@ var _ = class {
 		for (let t of e) {
 			n.add(t.nodeId);
 			let e = this.ensureFragment(t.nodeId);
-			e.fragmentEl.dataset.oriNodeId = t.nodeId, e.fragmentEl.style.transform = t.transform, e.clipEl.style.clipPath = t.clipPath, this.rootElement.appendChild(e.fragmentEl);
+			e.fragmentEl.dataset.oriNodeId = t.nodeId, e.fragmentEl.style.transform = t.transform, e.clipEl.style.clipPath = te(t.polygon, .75), this.rootElement.appendChild(e.fragmentEl);
 		}
 		for (let [e, t] of this.fragments) n.has(e) || (t.fragmentEl.remove(), this.fragments.delete(e));
 	}
@@ -468,7 +485,7 @@ var pe = class {
 	dispose() {}
 };
 function me(e) {
-	let t = getComputedStyle(e), n = y(e.style.left || t.left), r = y(e.style.top || t.top), i = y(e.style.width || t.width), a = y(e.style.height || t.height);
+	let t = getComputedStyle(e), n = b(e.style.left || t.left), r = b(e.style.top || t.top), i = b(e.style.width || t.width), a = b(e.style.height || t.height);
 	if (i > 0 && a > 0) return {
 		x: n,
 		y: r,
@@ -483,11 +500,11 @@ function me(e) {
 		height: o.height
 	} : null;
 }
-function y(e) {
+function b(e) {
 	let t = Number.parseFloat(e);
 	return Number.isFinite(t) ? t : 0;
 }
-var b = class {
+var x = class {
 	snapshot;
 	constructor(e) {
 		this.snapshot = e;
@@ -562,13 +579,13 @@ var be = class {
 			camera: t(e.paper, e.camera),
 			foldOps: n(e.foldOps),
 			controls: {}
-		}, this.tree = h(this.state), x(e.host, "static-view", this.state.camera), this.renderer = new _(S(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.snapshot);
+		}, this.tree = h(this.state), S(e.host, "static-view", this.state.camera), this.renderer = new v(C(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.snapshot);
 	}
 	async mount() {
 		this.render();
 	}
 	render() {
-		this.renderer.renderPieces(g(this.tree, this.state.paper), this.state.paper, !1);
+		this.renderer.renderPieces(_(this.tree, this.state.paper), this.state.paper, !1);
 	}
 	setAngle(e, t) {
 		let n = this.state.foldOps.find((t) => t.id === e);
@@ -582,7 +599,7 @@ var be = class {
 	mode = "baked-view";
 	renderer;
 	constructor(e) {
-		this.options = e, x(e.host, "baked-view", e.manifest.camera), e.host.dataset.oriBaked = "true", this.renderer = new _(S(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.manifest.snapshot);
+		this.options = e, S(e.host, "baked-view", e.manifest.camera), e.host.dataset.oriBaked = "true", this.renderer = new v(C(e.host, "ori-visual-layer")), this.renderer.setSnapshot(e.manifest.snapshot);
 	}
 	async mount() {
 		this.render();
@@ -618,9 +635,9 @@ var be = class {
 			new _e(),
 			new he(),
 			new ge()
-		], this.source = new pe(e.sourceRoot), x(e.host, "interactive-bridge", this.state.camera), S(e.host, "ori-source-layer").appendChild(e.sourceRoot);
-		let r = S(e.host, "ori-visual-layer");
-		this.renderer = e.visual?.backend === "live-mirror" ? new v(r, e.sourceRoot, this.keyRegistry) : new _(r), this.interactionLayer = S(e.host, "ori-interaction-layer"), S(e.host, "ori-activation-layer");
+		], this.source = new pe(e.sourceRoot), S(e.host, "interactive-bridge", this.state.camera), C(e.host, "ori-source-layer").appendChild(e.sourceRoot);
+		let r = C(e.host, "ori-visual-layer");
+		this.renderer = e.visual?.backend === "live-mirror" ? new y(r, e.sourceRoot, this.keyRegistry) : new v(r), this.interactionLayer = C(e.host, "ori-interaction-layer"), C(e.host, "ori-activation-layer");
 	}
 	onLayerPointer = (e) => {
 		let t = this.options.host.getBoundingClientRect();
@@ -631,10 +648,10 @@ var be = class {
 		});
 	};
 	async mount() {
-		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper), this.renderer instanceof _ && this.renderer.setSnapshot(this.snapshot), this.render(), this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer), this.interactionLayer.addEventListener("pointermove", this.onLayerPointer), this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
+		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper), this.renderer instanceof v && this.renderer.setSnapshot(this.snapshot), this.render(), this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer), this.interactionLayer.addEventListener("pointermove", this.onLayerPointer), this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
 	}
 	render() {
-		!this.snapshot && this.renderer instanceof _ || (this.renderer.renderPieces(g(this.tree, this.state.paper), this.state.paper, !1), this.renderer instanceof v && this.renderer.mirrorFormValues());
+		!this.snapshot && this.renderer instanceof v || (this.renderer.renderPieces(_(this.tree, this.state.paper), this.state.paper, !1), this.renderer instanceof y && this.renderer.mirrorFormValues());
 	}
 	setAngle(e, t) {
 		let n = this.state.foldOps.find((t) => t.id === e);
@@ -667,7 +684,7 @@ var be = class {
 		return ye(n, e.type), !0;
 	}
 	syncLivePseudoState(e, t) {
-		if (!(this.renderer instanceof v)) return;
+		if (!(this.renderer instanceof y)) return;
 		let n = this.options.visual?.pseudoStates;
 		if (!n) return;
 		let r = this.keyRegistry.ensureKey(t);
@@ -683,25 +700,25 @@ var be = class {
 		this.interactionLayer.removeEventListener("pointerdown", this.onLayerPointer), this.interactionLayer.removeEventListener("pointermove", this.onLayerPointer), this.interactionLayer.removeEventListener("pointerup", this.onLayerPointer), this.source.dispose(), this.snapshot?.revoke?.(), this.options.host.innerHTML = "";
 	}
 };
-function x(e, t, n) {
+function S(e, t, n) {
 	e.dataset.oriMode = t, e.style.position = e.style.position || "relative", e.style.perspective = `${n.perspective}px`, e.style.perspectiveOrigin = `${n.perspectiveOrigin.x}px ${n.perspectiveOrigin.y}px`, e.style.transformStyle = "preserve-3d";
 }
-function S(e, t) {
+function C(e, t) {
 	let n = e.querySelector(`:scope > .${t}`);
 	if (n) return n;
 	let r = document.createElement("div");
 	return r.className = t, r.style.position = "absolute", r.style.inset = "0", (t === "ori-visual-layer" || t === "ori-activation-layer") && (r.style.transformStyle = "preserve-3d"), (t === "ori-visual-layer" || t === "ori-activation-layer") && (r.style.pointerEvents = "none"), e.appendChild(r), r;
 }
-function C(e) {
+function w(e) {
 	return e.mode === "static-view" ? new be(e) : e.mode === "baked-view" ? new xe(e) : new Se(e);
 }
 //#endregion
 //#region demo/main.ts
-var w = document.querySelector("#target"), T = document.querySelector("#toggle"), E = document.querySelector("#saveBtn"), D = document.querySelector("#nameInput"), O = document.querySelector("#copyInstall"), k = document.querySelector("#installCommand"), A = document.querySelector("#foldStage"), j = document.querySelector("#activeFoldName"), M = document.querySelector("#angleValue"), N = document.querySelector("#angleDial"), P = document.querySelector("#angleHand"), Ce = document.querySelector("#creaseTools"), we = document.querySelector("#liveMirrorTarget");
-if (!w || !T || !E || !D || !O || !k || !A || !j || !M || !N || !P || !Ce || !we) throw Error("Demo DOM is missing required elements");
-var F = A, Te = j, Ee = M, I = N, De = P, Oe = Ce, L = we, R = w, z = E, B = D, V = O, ke = k;
+var T = document.querySelector("#target"), E = document.querySelector("#toggle"), D = document.querySelector("#saveBtn"), O = document.querySelector("#nameInput"), k = document.querySelector("#copyInstall"), A = document.querySelector("#installCommand"), j = document.querySelector("#foldStage"), M = document.querySelector("#activeFoldName"), N = document.querySelector("#angleValue"), P = document.querySelector("#angleDial"), Ce = document.querySelector("#angleHand"), we = document.querySelector("#creaseTools"), Te = document.querySelector("#liveMirrorTarget");
+if (!T || !E || !D || !O || !k || !A || !j || !M || !N || !P || !Ce || !we || !Te) throw Error("Demo DOM is missing required elements");
+var F = j, Ee = M, De = N, I = P, Oe = Ce, ke = we, L = Te, R = T, z = D, B = O, V = k, Ae = A;
 V.addEventListener("click", async () => {
-	let e = ke.textContent?.trim() || "npm install orikata";
+	let e = Ae.textContent?.trim() || "npm install orikata";
 	try {
 		await navigator.clipboard?.writeText(e);
 	} catch {
@@ -712,7 +729,7 @@ V.addEventListener("click", async () => {
 		V.textContent = "copy";
 	}, 1100);
 });
-function Ae(e) {
+function je(e) {
 	R.dataset.inputValue = e, X();
 }
 R.addEventListener("focusin", (e) => {
@@ -720,15 +737,15 @@ R.addEventListener("focusin", (e) => {
 }), R.addEventListener("focusout", (e) => {
 	e.target.classList?.contains("ori-input-proxy") && delete R.dataset.inputActive;
 });
-var je;
+var Me;
 z.addEventListener("click", () => {
-	window.clearTimeout(je), z.textContent = "Saved", X(), je = window.setTimeout(() => {
+	window.clearTimeout(Me), z.textContent = "Saved", X(), Me = window.setTimeout(() => {
 		z.textContent = "Save", X();
 	}, 620);
 }), B.addEventListener("input", () => {
-	Ae(B.value);
+	je(B.value);
 });
-var Me = [{
+var Ne = [{
 	id: "center-valley",
 	targetNodeId: e,
 	childNodeId: "right-panel",
@@ -763,17 +780,17 @@ var Me = [{
 }], H = {
 	"center-valley": -60,
 	"corner-mountain": 48
-}, Ne = {
+}, Pe = {
 	"center-valley": "center valley",
 	"corner-mountain": "corner mountain"
 }, U = "corner-mountain";
 function W(e, t) {
-	H[e] = Math.max(-85, Math.min(85, Math.round(t))), Q?.setAngle(e, H[e]), K(), F.dataset.activeFold = U, F.dataset.centerAngle = String(H["center-valley"]), F.dataset.cornerAngle = String(H["corner-mountain"]), Ee.textContent = `${H[U]}°`, I.setAttribute("aria-valuenow", String(H[U])), De.style.transform = `rotate(${H[U]}deg)`;
+	H[e] = Math.max(-85, Math.min(85, Math.round(t))), Q?.setAngle(e, H[e]), K(), F.dataset.activeFold = U, F.dataset.centerAngle = String(H["center-valley"]), F.dataset.cornerAngle = String(H["corner-mountain"]), De.textContent = `${H[U]}°`, I.setAttribute("aria-valuenow", String(H[U])), Oe.style.transform = `rotate(${H[U]}deg)`;
 }
 function G(e, t) {
 	for (let n of R.querySelectorAll("[data-fold-candidate], .crease-tool-layer[data-tool-id]")) (n.dataset.foldCandidate === e || n.dataset.toolId === e) && (n.dataset.state = t);
 }
-var Pe = [{
+var Fe = [{
 	id: "center-valley",
 	nodeId: e,
 	guide: {
@@ -804,43 +821,43 @@ var Pe = [{
 		y2: 80
 	}
 }];
-function Fe(e, t) {
+function Ie(e, t) {
 	let n = document.createElementNS("http://www.w3.org/2000/svg", "line");
 	n.setAttribute("class", t);
 	for (let [t, r] of Object.entries(e)) n.setAttribute(t, String(r));
 	return n;
 }
 function K() {
-	Oe.remove();
+	ke.remove();
 	for (let e of R.querySelectorAll(":scope > .crease-tool-layer")) e.remove();
-	for (let e of Pe) {
+	for (let e of Fe) {
 		let t = R.querySelector(`[data-ori-node-id="${e.nodeId}"]`);
 		if (!t) continue;
 		let n = document.createElement("div");
 		n.className = "crease-tool-layer", n.dataset.toolNode = e.nodeId, n.dataset.toolId = e.id, n.dataset.state = e.id === U ? "selected" : "idle", n.style.transform = t.style.transform || getComputedStyle(t).transform;
 		let r = document.createElement("button");
-		r.type = "button", r.className = `crease-hotspot ${e.id === "center-valley" ? "center" : "corner"}`, r.dataset.foldCandidate = e.id, r.dataset.state = e.id === U ? "selected" : "idle", r.setAttribute("aria-label", `select ${Ne[e.id]} crease`), r.addEventListener("mouseenter", () => {
+		r.type = "button", r.className = `crease-hotspot ${e.id === "center-valley" ? "center" : "corner"}`, r.dataset.foldCandidate = e.id, r.dataset.state = e.id === U ? "selected" : "idle", r.setAttribute("aria-label", `select ${Pe[e.id]} crease`), r.addEventListener("mouseenter", () => {
 			e.id !== U && G(e.id, "hover");
 		}), r.addEventListener("mouseleave", () => {
 			e.id !== U && G(e.id, "idle");
 		}), r.addEventListener("click", (t) => {
-			t.stopPropagation(), Ie(e.id);
+			t.stopPropagation(), Le(e.id);
 		});
 		let i = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-		i.setAttribute("class", "fold-tool-layer"), i.setAttribute("viewBox", "0 0 420 220"), i.setAttribute("aria-hidden", "true"), i.appendChild(Fe(e.guide, "candidate-guide")), i.appendChild(Fe(e.hot, "candidate-line")), n.appendChild(r), n.appendChild(i), R.appendChild(n);
+		i.setAttribute("class", "fold-tool-layer"), i.setAttribute("viewBox", "0 0 420 220"), i.setAttribute("aria-hidden", "true"), i.appendChild(Ie(e.guide, "candidate-guide")), i.appendChild(Ie(e.hot, "candidate-line")), n.appendChild(r), n.appendChild(i), R.appendChild(n);
 	}
 }
-function Ie(e) {
-	U = e, Te.textContent = Ne[e] ?? e;
-	for (let t of Pe) G(t.id, t.id === e ? "selected" : "idle");
+function Le(e) {
+	U = e, Ee.textContent = Pe[e] ?? e;
+	for (let t of Fe) G(t.id, t.id === e ? "selected" : "idle");
 	W(e, H[e] ?? 0);
 }
-function Le(e) {
+function Re(e) {
 	let t = I.getBoundingClientRect(), n = t.left + t.width / 2, r = t.top + t.height / 2, i = Math.atan2(e.clientY - r, e.clientX - n) * 180 / Math.PI;
 	return Math.max(-85, Math.min(85, Math.round(i)));
 }
 function q(e) {
-	W(U, Le(e));
+	W(U, Re(e));
 }
 I.addEventListener("pointerdown", (e) => {
 	I.setPointerCapture(e.pointerId), q(e);
@@ -852,7 +869,7 @@ I.addEventListener("pointerdown", (e) => {
 function J(e) {
 	return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function Re(e, t) {
+function ze(e, t) {
 	let n = J(e || "\xA0"), r = J(t || "Save");
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">
@@ -891,12 +908,12 @@ var Y = {
 	id: "washi-asanoha-card",
 	width: 420,
 	height: 220,
-	url: `data:image/svg+xml,${encodeURIComponent(Re(B.value, z.textContent || "Save"))}`
+	url: `data:image/svg+xml,${encodeURIComponent(ze(B.value, z.textContent || "Save"))}`
 };
 function X() {
-	Y.url = `data:image/svg+xml,${encodeURIComponent(Re(B.value, z.textContent || "Save"))}`, Q.setAngle("corner-mountain", H["corner-mountain"]);
+	Y.url = `data:image/svg+xml,${encodeURIComponent(ze(B.value, z.textContent || "Save"))}`, Q.setAngle("corner-mountain", H["corner-mountain"]);
 }
-function ze(e, t, n = "idle") {
+function Be(e, t, n = "idle") {
 	let r = e.split("\n").slice(0, t === "baked" ? 7 : 6).map((e, t) => `<text x="16" y="${23 + t * 14}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.4" fill="#252922">${J(e)}</text>`).join(""), i = t === "interactive" ? "#b65f45" : t === "baked" ? "#766f64" : "#2b2f2a", a = t === "interactive" ? "#766f64" : i, o = t === "interactive" ? n === "clicked" ? "Clicked" : "Tap" : t === "baked" ? "Frozen" : "View";
 	return `
 <svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
@@ -918,9 +935,9 @@ function ze(e, t, n = "idle") {
   ${t === "interactive" ? `<rect x="52" y="96" width="72" height="28" fill="${i}"/><text x="88" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#f7f1e4">${o}</text>` : `<text x="194" y="114" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="${i}">${o}</text>`}
 </svg>`;
 }
-async function Be() {
+async function Ve() {
 	let t = L.querySelector(".live-card-source");
-	t && (await C({
+	t && (await w({
 		mode: "interactive-bridge",
 		host: L,
 		sourceRoot: t,
@@ -961,7 +978,7 @@ async function Be() {
 			movingSide: 1,
 			angleDeg: 45
 		}],
-		snapshotProvider: new b({
+		snapshotProvider: new x({
 			id: "live-mirror-unused-snapshot",
 			width: 300,
 			height: 144,
@@ -993,21 +1010,21 @@ var Z = [{
 	movingSide: 1,
 	angleDeg: -45
 }];
-async function Ve() {
+async function He() {
 	let e = Array.from(document.querySelectorAll("[data-code-fold]"));
 	await Promise.all(e.map(async (e, t) => {
 		let n = e.dataset.exampleMode || "static", r = e.querySelector(".code-fold-source"), i = r?.textContent?.trim() || "", a = (r = e.dataset.bridgeStatus || "idle") => ({
 			id: `code-example-${n}-${t}`,
 			width: 248,
 			height: 148,
-			url: `data:image/svg+xml,${encodeURIComponent(ze(i, n, r))}`
+			url: `data:image/svg+xml,${encodeURIComponent(Be(i, n, r))}`
 		});
 		if (n === "interactive") {
-			let t = a(), n = new b(t), i = e.querySelector("[data-example-action]");
+			let t = a(), n = new x(t), i = e.querySelector("[data-example-action]");
 			i?.addEventListener("click", () => {
 				e.dataset.bridgeStatus = "clicked", t.url = a("clicked").url, o.setAngle("code-button-fold", -45);
 			});
-			let o = C({
+			let o = w({
 				mode: "interactive-bridge",
 				host: e,
 				sourceRoot: r,
@@ -1023,7 +1040,7 @@ async function Ve() {
 				r >= 0 && r <= 124 && a >= 0 && a <= 148 && i?.click();
 			}), await o.mount();
 		} else if (n === "baked") {
-			let t = C({
+			let t = w({
 				mode: "baked-view",
 				host: e,
 				manifest: le({
@@ -1036,7 +1053,7 @@ async function Ve() {
 				})
 			});
 			await t.mount(), e.dataset.bakedAngleMutable = String(t.setAngle("code-button-fold", 0));
-		} else await C({
+		} else await w({
 			mode: "static-view",
 			host: e,
 			paper: {
@@ -1049,19 +1066,19 @@ async function Ve() {
 		e.dataset.rendered = "true";
 	}));
 }
-var Q = C({
+var Q = w({
 	mode: "interactive-bridge",
-	host: w,
-	sourceRoot: w.querySelector(".card-source"),
+	host: T,
+	sourceRoot: T.querySelector(".card-source"),
 	paper: {
 		width: 420,
 		height: 220
 	},
-	foldOps: Me,
-	snapshotProvider: new b(Y)
+	foldOps: Ne,
+	snapshotProvider: new x(Y)
 }), $ = !0;
-await Q.mount(), Ae(B.value), await Be(), await Ve(), He();
-function He() {
+await Q.mount(), je(B.value), await Ve(), await He(), Ue();
+function Ue() {
 	let e = performance.now();
 	F.dataset.intro = "folding", delete F.dataset.toolsReady;
 	let t = (n) => {
@@ -1074,7 +1091,7 @@ function He() {
 	};
 	requestAnimationFrame(t);
 }
-T.addEventListener("click", () => {
+E.addEventListener("click", () => {
 	$ = !$, H["center-valley"] = 0, H["corner-mountain"] = $ ? 48 : 0, Q.setAngle("center-valley", H["center-valley"]), Q.setAngle("corner-mountain", H["corner-mountain"]), K(), W(U, H[U]);
 });
 //#endregion
