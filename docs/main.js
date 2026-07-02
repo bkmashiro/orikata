@@ -612,9 +612,6 @@ var target = document.querySelector("#target");
 var button = document.querySelector("#toggle");
 var saveBtn = document.querySelector("#saveBtn");
 var nameInput = document.querySelector("#nameInput");
-var visualSave = document.querySelector("#visualSave");
-var typedValue = document.querySelector("#typedValue");
-var controlOverlay = document.querySelector("#controlOverlay");
 var copyInstall = document.querySelector("#copyInstall");
 var installCommand = document.querySelector("#installCommand");
 var foldStage = document.querySelector("#foldStage");
@@ -623,7 +620,7 @@ var angleValue = document.querySelector("#angleValue");
 var angleDial = document.querySelector("#angleDial");
 var angleHand = document.querySelector("#angleHand");
 var creaseTools = document.querySelector("#creaseTools");
-if (!target || !button || !saveBtn || !nameInput || !visualSave || !typedValue || !controlOverlay || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error("Demo DOM is missing required elements");
 }
 var stageElement = foldStage;
@@ -633,9 +630,8 @@ var angleDialElement = angleDial;
 var angleHandElement = angleHand;
 var creaseToolHost = creaseTools;
 var targetElement = target;
-var visualSaveElement = visualSave;
-var typedValueElement = typedValue;
-var controlOverlayElement = controlOverlay;
+var saveButtonElement = saveBtn;
+var nameInputElement = nameInput;
 var copyInstallButton = copyInstall;
 var installCommandElement = installCommand;
 copyInstallButton.addEventListener("click", async () => {
@@ -657,14 +653,9 @@ copyInstallButton.addEventListener("click", async () => {
     copyInstallButton.textContent = "copy";
   }, 1100);
 });
-function setVisualInputValue(value) {
-  typedValueElement.textContent = value || "\xA0";
+function setSnapshotInputValue(value) {
   targetElement.dataset.inputValue = value;
-}
-function syncControlOverlayTransform() {
-  const foldedPanel = targetElement.querySelector('[data-ori-node-id="upper-corner-flap"]');
-  if (!foldedPanel) return;
-  controlOverlayElement.style.transform = foldedPanel.style.transform || getComputedStyle(foldedPanel).transform;
+  refreshSnapshotTexture();
 }
 targetElement.addEventListener("focusin", (event) => {
   if (event.target.classList?.contains("ori-input-proxy")) targetElement.dataset.inputActive = "true";
@@ -673,28 +664,24 @@ targetElement.addEventListener("focusout", (event) => {
   if (event.target.classList?.contains("ori-input-proxy")) delete targetElement.dataset.inputActive;
 });
 var feedbackTimer;
-saveBtn.addEventListener("click", () => {
+saveButtonElement.addEventListener("click", () => {
   window.clearTimeout(feedbackTimer);
   const baseAngle = foldAngles["corner-mountain"];
-  saveBtn.textContent = "Saved";
-  visualSaveElement.textContent = "Saved";
-  visualSaveElement.dataset.state = "saved";
+  saveButtonElement.textContent = "Saved";
   stageElement.dataset.feedback = "saved";
+  refreshSnapshotTexture();
   runtime?.setAngle("corner-mountain", Math.min(72, baseAngle + 10));
-  syncControlOverlayTransform();
   renderCreaseTools();
   feedbackTimer = window.setTimeout(() => {
+    saveButtonElement.textContent = "Save";
+    refreshSnapshotTexture();
     runtime?.setAngle("corner-mountain", baseAngle);
-    syncControlOverlayTransform();
     renderCreaseTools();
-    saveBtn.textContent = "Save";
-    visualSaveElement.textContent = "Save";
-    delete visualSaveElement.dataset.state;
     delete stageElement.dataset.feedback;
   }, 620);
 });
-nameInput.addEventListener("input", () => {
-  setVisualInputValue(nameInput.value);
+nameInputElement.addEventListener("input", () => {
+  setSnapshotInputValue(nameInputElement.value);
 });
 var foldOps = [
   {
@@ -726,7 +713,6 @@ var activeFoldId = "corner-mountain";
 function applyFoldAngle(id, angle) {
   foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
   runtime?.setAngle(id, foldAngles[id]);
-  syncControlOverlayTransform();
   renderCreaseTools();
   stageElement.dataset.activeFold = activeFoldId;
   stageElement.dataset.centerAngle = String(foldAngles["center-valley"]);
@@ -798,7 +784,6 @@ function renderCreaseTools() {
     layer.appendChild(svg);
     targetElement.appendChild(layer);
   }
-  syncControlOverlayTransform();
 }
 function setActiveFold(id) {
   activeFoldId = id;
@@ -829,7 +814,14 @@ angleDialElement.addEventListener("keydown", (event) => {
   event.preventDefault();
   applyFoldAngle(activeFoldId, foldAngles[activeFoldId] + (event.key === "ArrowRight" ? 5 : -5));
 });
-var snapshotSvg = `
+function escapeSvgText(value) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function buildSnapshotSvg(name, buttonLabel) {
+  const safeName = escapeSvgText(name || "\xA0");
+  const safeButton = escapeSvgText(buttonLabel || "Save");
+  const buttonFill = buttonLabel === "Saved" ? "#b65f45" : "#2b2f2a";
+  return `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">
   <defs>
     <pattern id="asanoha" width="36" height="31.176" patternUnits="userSpaceOnUse">
@@ -854,15 +846,24 @@ var snapshotSvg = `
     <text x="32" y="58" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="28" fill="#1f2420">Washi form</text>
     <text x="34" y="91" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">one real DOM</text>
     <text x="34" y="111" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">folded like paper</text>
+    <path d="M270 112h100" stroke="#1f2420" stroke-opacity=".42" stroke-width="1"/>
+    <text x="282" y="102" font-family="system-ui, sans-serif" font-size="13" fill="#1f2420">${safeName}</text>
+    <rect x="270" y="132" width="100" height="36" fill="${buttonFill}" fill-opacity="${buttonLabel === "Saved" ? "0.86" : "1"}"/>
+    <text x="320" y="155" text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="13" fill="#f7f1e4">${safeButton}</text>
     <circle cx="385" cy="32" r="18" fill="#b65f45" fill-opacity="0.18"/>
   </g>
 </svg>`;
+}
 var snapshot = {
   id: "washi-asanoha-card",
   width: 420,
   height: 220,
-  url: `data:image/svg+xml,${encodeURIComponent(snapshotSvg)}`
+  url: `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || "Save"))}`
 };
+function refreshSnapshotTexture() {
+  snapshot.url = `data:image/svg+xml,${encodeURIComponent(buildSnapshotSvg(nameInputElement.value, saveButtonElement.textContent || "Save"))}`;
+  runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
+}
 var runtime = createOrigamiRuntime({
   mode: "interactive-bridge",
   host: target,
@@ -873,8 +874,7 @@ var runtime = createOrigamiRuntime({
 });
 var folded = true;
 await runtime.mount();
-setVisualInputValue(nameInput.value);
-syncControlOverlayTransform();
+setSnapshotInputValue(nameInputElement.value);
 startIntroAnimation();
 function startIntroAnimation() {
   const start = -60;
@@ -889,7 +889,6 @@ function startIntroAnimation() {
     const angle = Math.round(start + (end - start) * eased);
     foldAngles["center-valley"] = angle;
     runtime.setAngle("center-valley", angle);
-    syncControlOverlayTransform();
     stageElement.dataset.centerAngle = String(angle);
     if (progress < 1) {
       requestAnimationFrame(tick);
@@ -897,7 +896,6 @@ function startIntroAnimation() {
     }
     foldAngles["center-valley"] = 0;
     runtime.setAngle("center-valley", 0);
-    syncControlOverlayTransform();
     stageElement.dataset.centerAngle = "0";
     stageElement.dataset.toolsReady = "true";
     delete stageElement.dataset.intro;
@@ -911,7 +909,6 @@ button.addEventListener("click", () => {
   foldAngles["corner-mountain"] = folded ? 48 : 0;
   runtime.setAngle("center-valley", foldAngles["center-valley"]);
   runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
-  syncControlOverlayTransform();
   renderCreaseTools();
   applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
 });
