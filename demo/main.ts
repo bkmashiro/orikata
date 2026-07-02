@@ -324,12 +324,20 @@ async function mountLiveMirrorSpike(): Promise<void> {
     paper: { width: 300, height: 144 },
     foldOps: [
       {
-        id: 'live-button-fold',
+        id: 'live-first-third-fold',
         targetNodeId: ROOT_ID,
         childNodeId: 'live-right-panel',
-        line: { a: { x: 210, y: 0 }, b: { x: 210, y: 144 } },
+        line: { a: { x: 100, y: 0 }, b: { x: 100, y: 144 } },
         movingSide: 1,
         angleDeg: -45
+      },
+      {
+        id: 'live-second-third-fold',
+        targetNodeId: 'live-right-panel',
+        childNodeId: 'live-last-third-panel',
+        line: { a: { x: 200, y: 0 }, b: { x: 200, y: 144 } },
+        movingSide: 1,
+        angleDeg: 45
       }
     ],
     snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),

@@ -929,21 +929,37 @@ async function Be() {
 			height: 144
 		},
 		foldOps: [{
-			id: "live-button-fold",
+			id: "live-first-third-fold",
 			targetNodeId: e,
 			childNodeId: "live-right-panel",
 			line: {
 				a: {
-					x: 210,
+					x: 100,
 					y: 0
 				},
 				b: {
-					x: 210,
+					x: 100,
 					y: 144
 				}
 			},
 			movingSide: 1,
 			angleDeg: -45
+		}, {
+			id: "live-second-third-fold",
+			targetNodeId: "live-right-panel",
+			childNodeId: "live-last-third-panel",
+			line: {
+				a: {
+					x: 200,
+					y: 0
+				},
+				b: {
+					x: 200,
+					y: 144
+				}
+			},
+			movingSide: 1,
+			angleDeg: 45
 		}],
 		snapshotProvider: new b({
 			id: "live-mirror-unused-snapshot",
