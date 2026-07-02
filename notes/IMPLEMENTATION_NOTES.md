@@ -23,6 +23,58 @@
 - 初版只实现了基础 click bridge：stage point -> fold node -> source local point -> target.click()
 - 后续补：真实 3D 反投影、PointerSyntheticAdapter、InputProxyAdapter、TextareaProxyAdapter、ScrollAdapter、RangeAdapter
 
+## Visual renderer strategies
+
+最新结论：视觉内容不能绑定到某个“所属面”。DOM 元素存在于原始 2D 纸面坐标里；如果折线穿过 input/button/text，它的视觉表现必须按 folded face 切成多片，每片跟随自己的 face transform。
+
+因此 Orikata 应该保留两套 visual renderer 路线：
+
+### 1. `snapshot-texture` renderer（当前主线 / KISS）
+
+这是现在代码的基本方案，也最接近 GPT Pro 原型：
+
+```txt
+source DOM / SVG / image snapshot
+  -> one texture
+  -> split by FoldNode polygons
+  -> each piece uses background-position + clip-path + face matrix3d
+```
+
+特点：
+
+- 一张完整贴图天然被折线切开；控件如果跨越折线，会自动在视觉上分成多片。
+- 真实 DOM 仍然只有一份并隐藏。
+- click/input 通过 folded hit-test 映射回 source DOM。
+- 纸张折叠动画只更新 face transform，不需要重新截图。
+- 内容状态变化（例如 `Save -> Saved`、input value）可以低频重新 capture / rebuild snapshot；需要更顺滑时用两套 snapshot pieces crossfade。
+
+这是短期应该回归的 demo 方案。不要再把按钮/输入视觉层作为 root overlay 固定在某个 face 上。
+
+### 2. `dom-clone-clip` renderer（预备高级方案）
+
+为了更完整地保留 DOM/CSS 外观，可以准备一套视觉克隆方案：
+
+```txt
+for each FoldNode face:
+  clone source DOM as visual-only subtree
+  clip clone to this face polygon
+  transform clone with this face world matrix
+```
+
+特点：
+
+- 每个 face 有一份视觉 clone，clip 后只露出属于该 face 的区域。
+- 一个控件跨越折线时，会在多个 clone 里分别显示对应片段。
+- clone 只负责视觉，必须 `pointer-events: none`；真实交互仍然回到唯一 source DOM。
+- 可以更好保留 CSS animation / transitions / DOM 外观。
+- 代价是样式、状态、表单值同步更复杂；不能把 clone 当成真实可交互控件，否则 focus/IME/event/state 会炸。
+
+建议将它作为第二阶段 renderer，而不是替代当前 snapshot renderer。
+
+### 不采用：single control overlay attached to facet
+
+已证伪：把 `typedValue`/`visualSave` 作为一个独立 overlay 绑定到 `right-panel` 或 `upper-corner-flap` 是错误模型。只要控件跨越折线或不完全属于该面，就会出现纸动、控件不按纸面切分的问题。
+
 ### `baked-view`
 
 新增的固定烘焙模式，适合角度和折线不会变化的场景：

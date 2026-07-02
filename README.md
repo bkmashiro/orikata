@@ -24,6 +24,20 @@ type OrigamiRuntimeMode = 'static-view' | 'interactive-bridge' | 'baked-view';
 
 当前实现是第二个几何地基版本：支持任意直线切 convex polygon、内部 `Mat4` 矩阵模型、CSS `matrix3d()` serializer、父子 fold world matrix 合成、每个 face 的 `projectedPolygon`，以及 fan triangulation + barycentric 的 folded→source 坐标映射。交互桥已有简单 adapter registry，默认支持 button/input button/checkbox/radio、anchor click 和 text input proxy。复杂凹多边形布尔切割、透视 ray-plane 反投影、wheel/drag 等高级 adapters 暂不做。
 
+## Visual renderer strategy
+
+Orikata separates real interaction from visual rendering. The source DOM stays unique; visual output can be rendered in two ways:
+
+### `snapshot-texture` renderer
+
+Current default. Capture or provide one source snapshot, then split that texture by folded face polygons. This is the KISS path and handles controls crossed by folds correctly at the visual level, because the whole paper texture is cut into pieces. Fold/open animations update face transforms only; content changes such as `Save -> Saved` or input values should refresh/rebuild the snapshot, optionally crossfading two snapshot layers.
+
+### `dom-clone-clip` renderer
+
+Planned advanced renderer. For each folded face, create a visual-only clone of the source DOM, clip it to that face polygon, and apply the face transform. This preserves more DOM/CSS appearance and animation, while still keeping pointer events and real state on the single source DOM. Clones must remain visual-only; they are not independent interactive controls.
+
+Avoid attaching a whole input/button overlay to one chosen facet. Elements live in source paper coordinates; if a fold line crosses them, their visual representation must be fragmented by face.
+
 ## Install / dev
 
 ```bash
