@@ -6,10 +6,23 @@ const saveBtn = document.querySelector<HTMLButtonElement>('#saveBtn');
 const nameInput = document.querySelector<HTMLInputElement>('#nameInput');
 const clickCount = document.querySelector<HTMLElement>('#clickCount');
 const sourceValue = document.querySelector<HTMLElement>('#sourceValue');
+const foldStage = document.querySelector<HTMLElement>('#foldStage');
+const activeFoldName = document.querySelector<HTMLElement>('#activeFoldName');
+const angleValue = document.querySelector<HTMLElement>('#angleValue');
+const angleDial = document.querySelector<HTMLElement>('#angleDial');
+const angleHand = document.querySelector<HTMLElement>('#angleHand');
+const candidateLines = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-fold-candidate]'));
+const candidateVisuals = Array.from(document.querySelectorAll<SVGLineElement>('[data-fold-visual]'));
 
-if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue) {
+if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand) {
   throw new Error('Demo DOM is missing required elements');
 }
+
+const stageElement = foldStage;
+const activeNameElement = activeFoldName;
+const angleValueElement = angleValue;
+const angleDialElement = angleDial;
+const angleHandElement = angleHand;
 
 let clicks = 0;
 saveBtn.addEventListener('click', () => {
@@ -38,6 +51,81 @@ const foldOps = [
     angleDeg: 28
   }
 ];
+
+const foldAngles: Record<string, number> = {
+  'center-valley': -46,
+  'corner-mountain': 28
+};
+const foldLabels: Record<string, string> = {
+  'center-valley': 'center valley',
+  'corner-mountain': 'corner mountain'
+};
+let activeFoldId = 'center-valley';
+
+function applyFoldAngle(id: string, angle: number): void {
+  foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
+  runtime?.setAngle(id, foldAngles[id]);
+  stageElement.dataset.activeFold = activeFoldId;
+  stageElement.dataset.centerAngle = String(foldAngles['center-valley']);
+  stageElement.dataset.cornerAngle = String(foldAngles['corner-mountain']);
+  angleValueElement.textContent = `${foldAngles[activeFoldId]}°`;
+  angleDialElement.setAttribute('aria-valuenow', String(foldAngles[activeFoldId]));
+  angleHandElement.style.transform = `rotate(${foldAngles[activeFoldId]}deg)`;
+}
+
+function setCandidateState(id: string, state: 'idle' | 'hover' | 'selected'): void {
+  for (const line of candidateLines) {
+    if (line.dataset.foldCandidate === id) line.dataset.state = state;
+  }
+  for (const visual of candidateVisuals) {
+    if (visual.dataset.foldVisual === id) visual.dataset.state = state;
+  }
+}
+
+function setActiveFold(id: string): void {
+  activeFoldId = id;
+  activeNameElement.textContent = foldLabels[id] ?? id;
+  for (const line of candidateLines) setCandidateState(line.dataset.foldCandidate ?? '', line.dataset.foldCandidate === id ? 'selected' : 'idle');
+  applyFoldAngle(id, foldAngles[id] ?? 0);
+}
+
+for (const line of candidateLines) {
+  line.addEventListener('mouseenter', () => {
+    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'hover');
+  });
+  line.addEventListener('mouseleave', () => {
+    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'idle');
+  });
+  line.addEventListener('click', () => {
+    setActiveFold(line.dataset.foldCandidate ?? 'center-valley');
+  });
+}
+
+function angleFromPointer(event: PointerEvent): number {
+  const rect = angleDialElement.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const deg = Math.atan2(event.clientY - cy, event.clientX - cx) * 180 / Math.PI;
+  return Math.max(-85, Math.min(85, Math.round(deg)));
+}
+
+function updateAngleFromPointer(event: PointerEvent): void {
+  applyFoldAngle(activeFoldId, angleFromPointer(event));
+}
+
+angleDialElement.addEventListener('pointerdown', (event) => {
+  angleDialElement.setPointerCapture(event.pointerId);
+  updateAngleFromPointer(event);
+});
+angleDialElement.addEventListener('pointermove', (event) => {
+  if (angleDialElement.hasPointerCapture(event.pointerId)) updateAngleFromPointer(event);
+});
+angleDialElement.addEventListener('click', (event) => updateAngleFromPointer(event));
+angleDialElement.addEventListener('keydown', (event) => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  event.preventDefault();
+  applyFoldAngle(activeFoldId, foldAngles[activeFoldId] + (event.key === 'ArrowRight' ? 5 : -5));
+});
 
 const snapshotSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">

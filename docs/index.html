@@ -189,13 +189,97 @@
         font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
         cursor: pointer;
       }
+      .crease-hotspot {
+        position: absolute;
+        z-index: 5;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        cursor: crosshair;
+      }
+      .crease-hotspot[data-state="hover"]::after,
+      .crease-hotspot[data-state="selected"]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: rgba(182, 95, 69, .1);
+      }
+      .crease-hotspot.center { left: 204px; top: 0; width: 12px; height: 220px; }
+      .crease-hotspot.corner { left: 204px; top: -4px; width: 238px; height: 18px; transform: rotate(27.2deg); transform-origin: 6px 9px; }
+      .fold-tool-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+        overflow: visible;
+      }
+      .candidate-line {
+        pointer-events: stroke;
+        cursor: crosshair;
+        stroke: rgba(182, 95, 69, .68);
+        stroke-width: 8;
+        stroke-linecap: round;
+        opacity: .42;
+        transition: opacity .16s ease, stroke-width .16s ease, filter .16s ease;
+      }
+      .candidate-line[data-state="hover"],
+      .candidate-line[data-state="selected"] {
+        opacity: 1;
+        stroke-width: 10;
+        filter: drop-shadow(0 0 8px rgba(182, 95, 69, .25));
+      }
+      .candidate-guide {
+        pointer-events: none;
+        stroke: rgba(31,36,32,.28);
+        stroke-width: 1.1;
+        stroke-dasharray: 6 7;
+      }
+      .toolbox {
+        width: min(100%, 420px);
+        margin: 16px auto 0;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,.24);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-align: left;
+      }
+      .tool-kicker { color: var(--muted); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+      .tool-active { margin-top: 3px; color: var(--ink); font-size: 13px; }
+      .angle-readout { color: var(--vermilion); font-variant-numeric: tabular-nums; }
+      .angle-dial {
+        position: relative;
+        width: 66px;
+        height: 66px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255,255,255,.68) 0 20%, transparent 21%),
+          conic-gradient(from -90deg, rgba(182,95,69,.32), rgba(31,36,32,.06), rgba(182,95,69,.32));
+        cursor: grab;
+        touch-action: none;
+      }
+      .angle-dial:active { cursor: grabbing; }
+      .angle-hand {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 26px;
+        height: 1px;
+        background: var(--sumi);
+        transform-origin: 0 50%;
+      }
       .controls {
         display: flex;
         align-items: center;
         justify-content: center;
         flex-wrap: wrap;
         gap: 12px 18px;
-        margin-top: 18px;
+        margin-top: 14px;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       #toggle {
@@ -266,8 +350,8 @@
             <code class="install">npm install orikata</code>
           </div>
 
-          <section class="stage" id="demo" aria-label="Interactive Orikata demo">
-            <div class="fold-note"><strong>升箱の折り目</strong><span>center valley + corner mountain fold</span></div>
+          <section class="stage" id="foldStage" data-active-fold="center-valley" data-center-angle="-46" data-corner-angle="28" aria-label="Interactive Orikata demo">
+            <div class="fold-note"><strong>升箱の折り目</strong><span>hover a crease, click to rotate</span></div>
             <div class="demo-scale">
               <section id="target" aria-label="Folded patterned DOM demo">
                 <div class="card-source">
@@ -276,7 +360,24 @@
                   <input id="nameInput" type="text" value="Aoi" aria-label="Name" />
                   <button id="saveBtn">Save</button>
                 </div>
+                <svg class="fold-tool-layer" viewBox="0 0 420 220" aria-hidden="true">
+                  <line class="candidate-guide" x1="210" y1="0" x2="210" y2="220" />
+                  <line class="candidate-line" data-fold-visual="center-valley" data-state="selected" x1="210" y1="0" x2="210" y2="220" />
+                  <line class="candidate-guide" x1="210" y1="0" x2="420" y2="108" />
+                  <line class="candidate-line" data-fold-visual="corner-mountain" data-state="idle" x1="210" y1="0" x2="420" y2="108" />
+                </svg>
+                <button class="crease-hotspot center" type="button" aria-label="select center valley crease" data-fold-candidate="center-valley" data-state="selected"></button>
+                <button class="crease-hotspot corner" type="button" aria-label="select corner mountain crease" data-fold-candidate="corner-mountain" data-state="idle"></button>
               </section>
+              <div class="toolbox" aria-label="Fold editor controls">
+                <div>
+                  <div class="tool-kicker">selected crease</div>
+                  <div class="tool-active"><span id="activeFoldName">center valley</span> <span class="angle-readout" id="angleValue">-46°</span></div>
+                </div>
+                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="-46" tabindex="0">
+                  <span id="angleHand" class="angle-hand" style="transform: rotate(-46deg)"></span>
+                </div>
+              </div>
               <div class="controls">
                 <button id="toggle">open / fold</button>
                 <div class="status">
@@ -285,7 +386,7 @@
                 </div>
               </div>
             </div>
-            <p class="caption">The visible layer is a patterned snapshot. Pointer hits on the folded paper are mapped back to the original hidden input and button.</p>
+            <p class="caption">Candidate creases sit above the folded visual layer. Hover to preview the line, select one, then use the dial to rotate that facet while the original DOM remains interactive.</p>
           </section>
 
           <div class="footer">
@@ -304,10 +405,23 @@ const saveBtn = document.querySelector('#saveBtn');
 const nameInput = document.querySelector('#nameInput');
 const clickCount = document.querySelector('#clickCount');
 const sourceValue = document.querySelector('#sourceValue');
+const foldStage = document.querySelector('#foldStage');
+const activeFoldName = document.querySelector('#activeFoldName');
+const angleValue = document.querySelector('#angleValue');
+const angleDial = document.querySelector('#angleDial');
+const angleHand = document.querySelector('#angleHand');
+const candidateLines = Array.from(document.querySelectorAll('[data-fold-candidate]'));
+const candidateVisuals = Array.from(document.querySelectorAll('[data-fold-visual]'));
 
-if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue) {
+if (!target || !button || !saveBtn || !nameInput || !clickCount || !sourceValue || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand) {
   throw new Error('Demo DOM is missing required elements');
 }
+
+const stageElement = foldStage;
+const activeNameElement = activeFoldName;
+const angleValueElement = angleValue;
+const angleDialElement = angleDial;
+const angleHandElement = angleHand;
 
 let clicks = 0;
 saveBtn.addEventListener('click', () => {
@@ -336,6 +450,81 @@ const foldOps = [
     angleDeg: 28
   }
 ];
+
+const foldAngles = {
+  'center-valley': -46,
+  'corner-mountain': 28
+};
+const foldLabels = {
+  'center-valley': 'center valley',
+  'corner-mountain': 'corner mountain'
+};
+let activeFoldId = 'center-valley';
+
+function applyFoldAngle(id, angle) {
+  foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
+  runtime?.setAngle(id, foldAngles[id]);
+  stageElement.dataset.activeFold = activeFoldId;
+  stageElement.dataset.centerAngle = String(foldAngles['center-valley']);
+  stageElement.dataset.cornerAngle = String(foldAngles['corner-mountain']);
+  angleValueElement.textContent = `${foldAngles[activeFoldId]}°`;
+  angleDialElement.setAttribute('aria-valuenow', String(foldAngles[activeFoldId]));
+  angleHandElement.style.transform = `rotate(${foldAngles[activeFoldId]}deg)`;
+}
+
+function setCandidateState(id, state) {
+  for (const line of candidateLines) {
+    if (line.dataset.foldCandidate === id) line.dataset.state = state;
+  }
+  for (const visual of candidateVisuals) {
+    if (visual.dataset.foldVisual === id) visual.dataset.state = state;
+  }
+}
+
+function setActiveFold(id) {
+  activeFoldId = id;
+  activeNameElement.textContent = foldLabels[id] ?? id;
+  for (const line of candidateLines) setCandidateState(line.dataset.foldCandidate ?? '', line.dataset.foldCandidate === id ? 'selected' : 'idle');
+  applyFoldAngle(id, foldAngles[id] ?? 0);
+}
+
+for (const line of candidateLines) {
+  line.addEventListener('mouseenter', () => {
+    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'hover');
+  });
+  line.addEventListener('mouseleave', () => {
+    if (line.dataset.foldCandidate !== activeFoldId) setCandidateState(line.dataset.foldCandidate ?? '', 'idle');
+  });
+  line.addEventListener('click', () => {
+    setActiveFold(line.dataset.foldCandidate ?? 'center-valley');
+  });
+}
+
+function angleFromPointer(event) {
+  const rect = angleDialElement.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const deg = Math.atan2(event.clientY - cy, event.clientX - cx) * 180 / Math.PI;
+  return Math.max(-85, Math.min(85, Math.round(deg)));
+}
+
+function updateAngleFromPointer(event) {
+  applyFoldAngle(activeFoldId, angleFromPointer(event));
+}
+
+angleDialElement.addEventListener('pointerdown', (event) => {
+  angleDialElement.setPointerCapture(event.pointerId);
+  updateAngleFromPointer(event);
+});
+angleDialElement.addEventListener('pointermove', (event) => {
+  if (angleDialElement.hasPointerCapture(event.pointerId)) updateAngleFromPointer(event);
+});
+angleDialElement.addEventListener('click', (event) => updateAngleFromPointer(event));
+angleDialElement.addEventListener('keydown', (event) => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  event.preventDefault();
+  applyFoldAngle(activeFoldId, foldAngles[activeFoldId] + (event.key === 'ArrowRight' ? 5 : -5));
+});
 
 const snapshotSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220">
