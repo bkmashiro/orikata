@@ -205,12 +205,19 @@
         font-family: ui-serif, "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
         cursor: pointer;
       }
+      .control-overlay-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 24;
+        pointer-events: none;
+        transform-origin: 0 0;
+        transform-style: preserve-3d;
+      }
       .typed-value,
       .visual-save {
         position: absolute;
         left: 270px;
         width: 100px;
-        z-index: 24;
         pointer-events: none;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
@@ -488,8 +495,10 @@
                   <input id="nameInput" type="text" value="Aoi" aria-label="Name" />
                   <button id="saveBtn">Save</button>
                 </div>
-                <div id="typedValue" class="typed-value" aria-hidden="true">Aoi</div>
-                <div id="visualSave" class="visual-save" aria-hidden="true">Save</div>
+                <div id="controlOverlay" class="control-overlay-layer" aria-hidden="true">
+                  <div id="typedValue" class="typed-value">Aoi</div>
+                  <div id="visualSave" class="visual-save">Save</div>
+                </div>
                 <div id="creaseTools" aria-hidden="true"></div>
               </section>
               <div class="toolbox" aria-label="Fold editor controls">

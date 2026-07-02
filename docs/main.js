@@ -614,6 +614,7 @@ var saveBtn = document.querySelector("#saveBtn");
 var nameInput = document.querySelector("#nameInput");
 var visualSave = document.querySelector("#visualSave");
 var typedValue = document.querySelector("#typedValue");
+var controlOverlay = document.querySelector("#controlOverlay");
 var copyInstall = document.querySelector("#copyInstall");
 var installCommand = document.querySelector("#installCommand");
 var foldStage = document.querySelector("#foldStage");
@@ -622,7 +623,7 @@ var angleValue = document.querySelector("#angleValue");
 var angleDial = document.querySelector("#angleDial");
 var angleHand = document.querySelector("#angleHand");
 var creaseTools = document.querySelector("#creaseTools");
-if (!target || !button || !saveBtn || !nameInput || !visualSave || !typedValue || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !visualSave || !typedValue || !controlOverlay || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
   throw new Error("Demo DOM is missing required elements");
 }
 var stageElement = foldStage;
@@ -634,6 +635,7 @@ var creaseToolHost = creaseTools;
 var targetElement = target;
 var visualSaveElement = visualSave;
 var typedValueElement = typedValue;
+var controlOverlayElement = controlOverlay;
 var copyInstallButton = copyInstall;
 var installCommandElement = installCommand;
 copyInstallButton.addEventListener("click", async () => {
@@ -659,6 +661,11 @@ function setVisualInputValue(value) {
   typedValueElement.textContent = value || "\xA0";
   targetElement.dataset.inputValue = value;
 }
+function syncControlOverlayTransform() {
+  const foldedPanel = targetElement.querySelector('[data-ori-node-id="upper-corner-flap"]');
+  if (!foldedPanel) return;
+  controlOverlayElement.style.transform = foldedPanel.style.transform || getComputedStyle(foldedPanel).transform;
+}
 targetElement.addEventListener("focusin", (event) => {
   if (event.target.classList?.contains("ori-input-proxy")) targetElement.dataset.inputActive = "true";
 });
@@ -674,9 +681,11 @@ saveBtn.addEventListener("click", () => {
   visualSaveElement.dataset.state = "saved";
   stageElement.dataset.feedback = "saved";
   runtime?.setAngle("corner-mountain", Math.min(72, baseAngle + 10));
+  syncControlOverlayTransform();
   renderCreaseTools();
   feedbackTimer = window.setTimeout(() => {
     runtime?.setAngle("corner-mountain", baseAngle);
+    syncControlOverlayTransform();
     renderCreaseTools();
     saveBtn.textContent = "Save";
     visualSaveElement.textContent = "Save";
@@ -717,6 +726,7 @@ var activeFoldId = "corner-mountain";
 function applyFoldAngle(id, angle) {
   foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
   runtime?.setAngle(id, foldAngles[id]);
+  syncControlOverlayTransform();
   renderCreaseTools();
   stageElement.dataset.activeFold = activeFoldId;
   stageElement.dataset.centerAngle = String(foldAngles["center-valley"]);
@@ -788,6 +798,7 @@ function renderCreaseTools() {
     layer.appendChild(svg);
     targetElement.appendChild(layer);
   }
+  syncControlOverlayTransform();
 }
 function setActiveFold(id) {
   activeFoldId = id;
@@ -863,6 +874,7 @@ var runtime = createOrigamiRuntime({
 var folded = true;
 await runtime.mount();
 setVisualInputValue(nameInput.value);
+syncControlOverlayTransform();
 startIntroAnimation();
 function startIntroAnimation() {
   const start = -60;
@@ -877,6 +889,7 @@ function startIntroAnimation() {
     const angle = Math.round(start + (end - start) * eased);
     foldAngles["center-valley"] = angle;
     runtime.setAngle("center-valley", angle);
+    syncControlOverlayTransform();
     stageElement.dataset.centerAngle = String(angle);
     if (progress < 1) {
       requestAnimationFrame(tick);
@@ -884,6 +897,7 @@ function startIntroAnimation() {
     }
     foldAngles["center-valley"] = 0;
     runtime.setAngle("center-valley", 0);
+    syncControlOverlayTransform();
     stageElement.dataset.centerAngle = "0";
     stageElement.dataset.toolsReady = "true";
     delete stageElement.dataset.intro;
@@ -897,6 +911,7 @@ button.addEventListener("click", () => {
   foldAngles["corner-mountain"] = folded ? 48 : 0;
   runtime.setAngle("center-valley", foldAngles["center-valley"]);
   runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
+  syncControlOverlayTransform();
   renderCreaseTools();
   applyFoldAngle(activeFoldId, foldAngles[activeFoldId]);
 });

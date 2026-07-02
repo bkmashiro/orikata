@@ -23,6 +23,10 @@ test('install command copies and folded demo bridges button feedback and text in
   const snapshotBackground = await page.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
   expect(decodeURIComponent(snapshotBackground)).not.toContain('>Save<');
   expect(decodeURIComponent(snapshotBackground)).not.toContain('>Aoi<');
+  await expect(page.locator('#controlOverlay')).toHaveCSS(
+    'transform',
+    await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform)
+  );
 
   const initialFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
   await page.mouse.click(target!.x + 290, target!.y + 150);
@@ -68,6 +72,8 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
 
   await expect(page.locator('#foldStage')).not.toHaveAttribute('data-center-angle', '0');
   await expect(page.locator('#angleValue')).not.toHaveText('0°');
+  const flapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
+  await expect(page.locator('#controlOverlay')).toHaveCSS('transform', flapTransform);
 });
 
 test('crease guides are attached to folded facets instead of a flat global overlay', async ({ page }) => {
