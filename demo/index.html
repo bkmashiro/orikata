@@ -213,8 +213,8 @@
         pointer-events: auto;
         cursor: crosshair;
       }
-      .crease-hotspot.center { left: 204px; top: 0; width: 12px; height: 220px; }
-      .crease-hotspot.corner { left: 204px; top: -4px; width: 238px; height: 18px; transform: rotate(27.2deg); transform-origin: 6px 9px; }
+      .crease-hotspot.center { left: 206px; top: 8px; width: 8px; height: 204px; }
+      .crease-hotspot.corner { left: 294px; top: -4px; width: 150px; height: 18px; transform: rotate(33.7deg); transform-origin: 6px 9px; }
       .crease-hotspot[data-state="hover"]::after,
       .crease-hotspot[data-state="selected"]::after {
         content: "";
@@ -366,11 +366,11 @@
           <div class="copy">
             <div class="eyebrow">folded DOM runtime</div>
             <h1>Orikata<span class="jp">折り方</span></h1>
-            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo uses a masu-box inspired crease: a valley fold through the center, then a small diagonal flap on patterned washi.</p>
+            <p class="lead">A quiet runtime for folding one real DOM surface into paper-like facets. The demo now treats the center line as a pre-crease, then folds only a small diagonal corner flap on patterned washi.</p>
             <code class="install">npm install orikata</code>
           </div>
 
-          <section class="stage" id="foldStage" data-active-fold="center-valley" data-center-angle="-46" data-corner-angle="28" aria-label="Interactive Orikata demo">
+          <section class="stage" id="foldStage" data-active-fold="corner-mountain" data-center-angle="0" data-corner-angle="48" aria-label="Interactive Orikata demo">
             <div class="fold-note"><strong>升箱の折り目</strong><span>hover a crease, click to rotate</span></div>
             <div class="demo-scale">
               <section id="target" aria-label="Folded patterned DOM demo">
@@ -385,10 +385,10 @@
               <div class="toolbox" aria-label="Fold editor controls">
                 <div>
                   <div class="tool-kicker">selected crease</div>
-                  <div class="tool-active"><span id="activeFoldName">center valley</span> <span class="angle-readout" id="angleValue">-46°</span></div>
+                  <div class="tool-active"><span id="activeFoldName">corner mountain</span> <span class="angle-readout" id="angleValue">48°</span></div>
                 </div>
-                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="-46" tabindex="0">
-                  <span id="angleHand" class="angle-hand" style="transform: rotate(-46deg)"></span>
+                <div id="angleDial" class="angle-dial" role="slider" aria-label="Fold angle" aria-valuemin="-85" aria-valuemax="85" aria-valuenow="48" tabindex="0">
+                  <span id="angleHand" class="angle-hand" style="transform: rotate(48deg)"></span>
                 </div>
               </div>
               <div class="controls">
@@ -399,7 +399,7 @@
                 </div>
               </div>
             </div>
-            <p class="caption">Candidate creases sit above the folded visual layer. Hover to preview the line, select one, then use the dial to rotate that facet while the original DOM remains interactive.</p>
+            <p class="caption">Step 1 is a flat center pre-crease; step 2 folds a local corner flap on the already-defined right panel. The sheet should read as one continuous piece of paper, not two sliced halves.</p>
           </section>
 
           <div class="footer">

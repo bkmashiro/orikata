@@ -644,26 +644,26 @@ var foldOps = [
     childNodeId: "right-panel",
     line: { a: { x: 210, y: 0 }, b: { x: 210, y: 220 } },
     movingSide: 1,
-    angleDeg: -46
+    angleDeg: 0
   },
   {
     id: "corner-mountain",
     targetNodeId: "right-panel",
     childNodeId: "upper-corner-flap",
-    line: { a: { x: 210, y: 0 }, b: { x: 420, y: 108 } },
-    movingSide: -1,
-    angleDeg: 28
+    line: { a: { x: 300, y: 0 }, b: { x: 420, y: 80 } },
+    movingSide: 1,
+    angleDeg: 48
   }
 ];
 var foldAngles = {
-  "center-valley": -46,
-  "corner-mountain": 28
+  "center-valley": 0,
+  "corner-mountain": 48
 };
 var foldLabels = {
   "center-valley": "center valley",
   "corner-mountain": "corner mountain"
 };
-var activeFoldId = "center-valley";
+var activeFoldId = "corner-mountain";
 function applyFoldAngle(id, angle) {
   foldAngles[id] = Math.max(-85, Math.min(85, Math.round(angle)));
   runtime?.setAngle(id, foldAngles[id]);
@@ -690,8 +690,8 @@ var creaseGuides = [
   {
     id: "corner-mountain",
     nodeId: "right-panel",
-    guide: { x1: 210, y1: 0, x2: 420, y2: 108 },
-    hot: { x1: 210, y1: 0, x2: 420, y2: 108 }
+    guide: { x1: 300, y1: 0, x2: 420, y2: 80 },
+    hot: { x1: 300, y1: 0, x2: 420, y2: 80 }
   }
 ];
 function svgLine(attrs, className) {
@@ -786,8 +786,8 @@ var snapshotSvg = `
   <rect width="420" height="220" fill="#efe3cb"/>
   <rect width="420" height="220" fill="url(#asanoha)"/>
   <path d="M0 0h420v220H0z" fill="none" stroke="#2b2f2a" stroke-opacity="0.22"/>
-  <path d="M210 0v220" stroke="#2b2f2a" stroke-opacity="0.33" stroke-width="1.4" stroke-dasharray="7 8"/>
-  <path d="M210 0 420 108" stroke="#b65f45" stroke-opacity="0.46" stroke-width="1.2" stroke-dasharray="5 7"/>
+  <path d="M210 0v220" stroke="#2b2f2a" stroke-opacity="0.22" stroke-width="1.1" stroke-dasharray="6 8"/>
+  <path d="M300 0 420 80" stroke="#b65f45" stroke-opacity="0.5" stroke-width="1.2" stroke-dasharray="5 7"/>
   <g filter="url(#bleed)">
     <circle cx="84" cy="86" r="40" fill="none" stroke="#1f2420" stroke-opacity="0.16" stroke-width="12"/>
     <text x="32" y="58" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="28" fill="#1f2420">Washi form</text>
@@ -819,8 +819,8 @@ await runtime.mount();
 renderCreaseTools();
 button.addEventListener("click", () => {
   folded = !folded;
-  foldAngles["center-valley"] = folded ? -46 : 0;
-  foldAngles["corner-mountain"] = folded ? 28 : 0;
+  foldAngles["center-valley"] = 0;
+  foldAngles["corner-mountain"] = folded ? 48 : 0;
   runtime.setAngle("center-valley", foldAngles["center-valley"]);
   runtime.setAngle("corner-mountain", foldAngles["corner-mountain"]);
   renderCreaseTools();
