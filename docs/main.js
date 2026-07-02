@@ -402,6 +402,164 @@ var FoldVisualRenderer = class {
 		}
 	}
 };
+var FoldElementKeyRegistry = class {
+	nextId = 1;
+	keyByElement = /* @__PURE__ */ new WeakMap();
+	assign(root) {
+		this.ensureKey(root);
+		const elements = root.querySelectorAll("*");
+		for (const element of elements) this.ensureKey(element);
+	}
+	ensureKey(element) {
+		const existing = this.keyByElement.get(element) ?? element.dataset.foldKey;
+		if (existing) {
+			this.keyByElement.set(element, existing);
+			element.dataset.foldKey = existing;
+			return existing;
+		}
+		const key = `fold_el_${this.nextId++}`;
+		this.keyByElement.set(element, key);
+		element.dataset.foldKey = key;
+		return key;
+	}
+	getKey(element) {
+		return this.keyByElement.get(element) ?? element.dataset.foldKey;
+	}
+};
+var LiveMirrorRenderer = class {
+	sourceRoot;
+	keyRegistry;
+	rootElement;
+	fragments = /* @__PURE__ */ new Map();
+	constructor(rootElement, sourceRoot, keyRegistry) {
+		this.sourceRoot = sourceRoot;
+		this.keyRegistry = keyRegistry;
+		this.rootElement = rootElement;
+	}
+	renderPieces(pieces, paper) {
+		this.keyRegistry.assign(this.sourceRoot);
+		this.rootElement.style.position = "relative";
+		this.rootElement.style.width = `${paper.width}px`;
+		this.rootElement.style.height = `${paper.height}px`;
+		this.rootElement.style.transformStyle = "preserve-3d";
+		const seen = /* @__PURE__ */ new Set();
+		for (const piece of pieces) {
+			seen.add(piece.nodeId);
+			const dom = this.ensureFragment(piece.nodeId);
+			dom.fragmentEl.dataset.oriNodeId = piece.nodeId;
+			dom.fragmentEl.style.transform = piece.transform;
+			dom.clipEl.style.clipPath = piece.clipPath;
+			this.rootElement.appendChild(dom.fragmentEl);
+		}
+		for (const [id, dom] of this.fragments) if (!seen.has(id)) {
+			dom.fragmentEl.remove();
+			this.fragments.delete(id);
+		}
+	}
+	syncSourceMutation() {
+		for (const [id, dom] of this.fragments) {
+			const mirror = this.createMirrorRoot();
+			dom.mirrorRoot.replaceWith(mirror.root);
+			dom.mirrorRoot = mirror.root;
+			dom.keyToCloneEl = mirror.map;
+			this.fragments.set(id, dom);
+		}
+	}
+	setPseudoState(params) {
+		for (const dom of this.fragments.values()) {
+			for (const element of dom.keyToCloneEl.values()) {
+				if (params.hover !== void 0) delete element.dataset.foldHover;
+				if (params.active !== void 0) delete element.dataset.foldActive;
+				if (params.focus !== void 0) delete element.dataset.foldFocus;
+				if (params.focusVisible !== void 0) delete element.dataset.foldFocusVisible;
+			}
+			if (!params.key) continue;
+			const clone = dom.keyToCloneEl.get(params.key);
+			if (!clone) continue;
+			if (params.hover) clone.dataset.foldHover = "true";
+			if (params.active) clone.dataset.foldActive = "true";
+			if (params.focus) clone.dataset.foldFocus = "true";
+			if (params.focusVisible) clone.dataset.foldFocusVisible = "true";
+		}
+	}
+	mirrorFormValues() {
+		const controls = this.sourceRoot.querySelectorAll("input, textarea, select");
+		for (const sourceControl of controls) {
+			const key = this.keyRegistry.getKey(sourceControl);
+			if (!key) continue;
+			for (const dom of this.fragments.values()) {
+				const clone = dom.keyToCloneEl.get(key);
+				if (clone instanceof HTMLInputElement && sourceControl instanceof HTMLInputElement) {
+					clone.value = sourceControl.value;
+					clone.checked = sourceControl.checked;
+				} else if (clone instanceof HTMLTextAreaElement && sourceControl instanceof HTMLTextAreaElement) clone.value = sourceControl.value;
+				else if (clone instanceof HTMLSelectElement && sourceControl instanceof HTMLSelectElement) clone.selectedIndex = sourceControl.selectedIndex;
+			}
+		}
+	}
+	ensureFragment(id) {
+		const existing = this.fragments.get(id);
+		if (existing) return existing;
+		const fragmentEl = document.createElement("div");
+		fragmentEl.className = "ori-live-fragment ori-fold-node";
+		fragmentEl.style.position = "absolute";
+		fragmentEl.style.inset = "0";
+		fragmentEl.style.transformOrigin = "0 0";
+		fragmentEl.style.transformStyle = "preserve-3d";
+		fragmentEl.style.pointerEvents = "none";
+		fragmentEl.style.overflow = "visible";
+		const clipEl = document.createElement("div");
+		clipEl.className = "ori-live-clip";
+		clipEl.style.position = "absolute";
+		clipEl.style.inset = "0";
+		clipEl.style.pointerEvents = "none";
+		clipEl.style.backfaceVisibility = "visible";
+		const mirror = this.createMirrorRoot();
+		clipEl.appendChild(mirror.root);
+		fragmentEl.appendChild(clipEl);
+		const dom = {
+			fragmentEl,
+			clipEl,
+			mirrorRoot: mirror.root,
+			keyToCloneEl: mirror.map
+		};
+		this.fragments.set(id, dom);
+		return dom;
+	}
+	createMirrorRoot() {
+		const clone = this.sourceRoot.cloneNode(true);
+		clone.classList.add("ori-live-mirror");
+		clone.setAttribute("aria-hidden", "true");
+		clone.setAttribute("inert", "");
+		clone.style.pointerEvents = "none";
+		clone.style.userSelect = "none";
+		sanitizeDuplicateIds(clone);
+		return {
+			root: clone,
+			map: buildCloneElementMap(clone)
+		};
+	}
+};
+function buildCloneElementMap(root) {
+	const map = /* @__PURE__ */ new Map();
+	const key = root.dataset.foldKey;
+	if (key) map.set(key, root);
+	for (const element of root.querySelectorAll("[data-fold-key]")) {
+		const elementKey = element.dataset.foldKey;
+		if (elementKey) map.set(elementKey, element);
+	}
+	return map;
+}
+function sanitizeDuplicateIds(root) {
+	if (root.id) {
+		root.dataset.foldOriginalId = root.id;
+		root.removeAttribute("id");
+	}
+	for (const element of root.querySelectorAll("[id]")) {
+		element.dataset.foldOriginalId = element.id;
+		element.removeAttribute("id");
+	}
+}
 var SourceSurface = class {
 	sourceRoot;
 	constructor(sourceRoot) {
@@ -593,6 +751,7 @@ var InteractiveOrigamiRuntime = class {
 	tree;
 	source;
 	renderer;
+	keyRegistry = new FoldElementKeyRegistry();
 	adapters;
 	interactionLayer;
 	snapshot = null;
@@ -614,7 +773,8 @@ var InteractiveOrigamiRuntime = class {
 		this.source = new SourceSurface(options.sourceRoot);
 		setupHost(options.host, "interactive-bridge", this.state.camera);
 		ensureLayer(options.host, "ori-source-layer").appendChild(options.sourceRoot);
-		this.renderer = new FoldVisualRenderer(ensureLayer(options.host, "ori-visual-layer"));
+		const visualLayer = ensureLayer(options.host, "ori-visual-layer");
+		this.renderer = options.visual?.backend === "live-mirror" ? new LiveMirrorRenderer(visualLayer, options.sourceRoot, this.keyRegistry) : new FoldVisualRenderer(visualLayer);
 		this.interactionLayer = ensureLayer(options.host, "ori-interaction-layer");
 		ensureLayer(options.host, "ori-activation-layer");
 	}
@@ -628,15 +788,16 @@ var InteractiveOrigamiRuntime = class {
 	};
 	async mount() {
 		this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
-		this.renderer.setSnapshot(this.snapshot);
+		if (this.renderer instanceof FoldVisualRenderer) this.renderer.setSnapshot(this.snapshot);
 		this.render();
 		this.interactionLayer.addEventListener("pointerdown", this.onLayerPointer);
 		this.interactionLayer.addEventListener("pointermove", this.onLayerPointer);
 		this.interactionLayer.addEventListener("pointerup", this.onLayerPointer);
 	}
 	render() {
-		if (!this.snapshot) return;
+		if (!this.snapshot && this.renderer instanceof FoldVisualRenderer) return;
 		this.renderer.renderPieces(piecesFromTree(this.tree, this.state.paper), this.state.paper, false);
+		if (this.renderer instanceof LiveMirrorRenderer) this.renderer.mirrorFormValues();
 	}
 	setAngle(opId, angleDeg) {
 		const op = this.state.foldOps.find((candidate) => candidate.id === opId);
@@ -664,6 +825,7 @@ var InteractiveOrigamiRuntime = class {
 			sourceTarget: target,
 			elementId: target.dataset.oriElementId
 		};
+		this.syncLivePseudoState(event.type, target);
 		const method = event.type === "pointerdown" ? "pointerDown" : event.type === "pointermove" ? "pointerMove" : event.type === "pointerup" || event.type === "click" ? "pointerUp" : void 0;
 		if (method) for (const adapter of this.adapters) {
 			const handler = adapter[method];
@@ -671,6 +833,21 @@ var InteractiveOrigamiRuntime = class {
 		}
 		dispatchSyntheticEvent(target, event.type);
 		return true;
+	}
+	syncLivePseudoState(type, target) {
+		if (!(this.renderer instanceof LiveMirrorRenderer)) return;
+		const pseudo = this.options.visual?.pseudoStates;
+		if (!pseudo) return;
+		const key = this.keyRegistry.ensureKey(target);
+		if (type === "pointermove" && pseudo.hover) this.renderer.setPseudoState({
+			key,
+			hover: true
+		});
+		if (type === "pointerdown" && pseudo.active) this.renderer.setPseudoState({
+			key,
+			active: true
+		});
+		if ((type === "pointerup" || type === "click") && pseudo.active) this.renderer.setPseudoState({ active: false });
 	}
 	dispose() {
 		this.interactionLayer.removeEventListener("pointerdown", this.onLayerPointer);
@@ -719,13 +896,15 @@ var angleValue = document.querySelector("#angleValue");
 var angleDial = document.querySelector("#angleDial");
 var angleHand = document.querySelector("#angleHand");
 var creaseTools = document.querySelector("#creaseTools");
-if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) throw new Error("Demo DOM is missing required elements");
+var liveMirrorTarget = document.querySelector("#liveMirrorTarget");
+if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools || !liveMirrorTarget) throw new Error("Demo DOM is missing required elements");
 var stageElement = foldStage;
 var activeNameElement = activeFoldName;
 var angleValueElement = angleValue;
 var angleDialElement = angleDial;
 var angleHandElement = angleHand;
 var creaseToolHost = creaseTools;
+var liveMirrorTargetElement = liveMirrorTarget;
 var targetElement = target;
 var saveButtonElement = saveBtn;
 var nameInputElement = nameInput;
@@ -1006,6 +1185,66 @@ function buildCodeSnapshotSvg(code) {
 	}).join("")}</g>
 </svg>`;
 }
+async function mountLiveMirrorSpike() {
+	const sourceRoot = liveMirrorTargetElement.querySelector(".live-card-source");
+	if (!sourceRoot) return;
+	await createOrigamiRuntime({
+		mode: "interactive-bridge",
+		host: liveMirrorTargetElement,
+		sourceRoot,
+		paper: {
+			width: 300,
+			height: 144
+		},
+		foldOps: [{
+			id: "live-center-fold",
+			targetNodeId: ROOT_ID,
+			childNodeId: "live-right-panel",
+			line: {
+				a: {
+					x: 150,
+					y: 0
+				},
+				b: {
+					x: 150,
+					y: 144
+				}
+			},
+			movingSide: 1,
+			angleDeg: -20
+		}, {
+			id: "live-corner-fold",
+			targetNodeId: "live-right-panel",
+			childNodeId: "live-corner-flap",
+			line: {
+				a: {
+					x: 220,
+					y: 0
+				},
+				b: {
+					x: 300,
+					y: 50
+				}
+			},
+			movingSide: 1,
+			angleDeg: 26
+		}],
+		snapshotProvider: new StaticImageSnapshotProvider({
+			id: "live-mirror-unused-snapshot",
+			width: 300,
+			height: 144,
+			url: ""
+		}),
+		visual: {
+			backend: "live-mirror",
+			pseudoStates: {
+				hover: true,
+				active: true
+			}
+		}
+	}).mount();
+	liveMirrorTargetElement.dataset.liveMirrorReady = "true";
+}
 async function mountFoldedCodeExamples() {
 	const blocks = Array.from(document.querySelectorAll("[data-code-fold]"));
 	await Promise.all(blocks.map(async (host, index) => {
@@ -1074,6 +1313,7 @@ var runtime = createOrigamiRuntime({
 var folded = true;
 await runtime.mount();
 setSnapshotInputValue(nameInputElement.value);
+await mountLiveMirrorSpike();
 await mountFoldedCodeExamples();
 startIntroAnimation();
 function startIntroAnimation() {

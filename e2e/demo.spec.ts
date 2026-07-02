@@ -18,8 +18,8 @@ test('install command copies and folded demo bridges button feedback and text in
   await expect(page.locator('#clickCount')).toHaveCount(0);
   await expect(page.locator('#sourceValue')).toHaveCount(0);
   await expect(page.locator('#saveFeedback')).toHaveCount(0);
-  await expect(page.locator('.ori-source-layer')).toHaveCSS('visibility', 'hidden');
-  await expect(page.locator('.ori-source-layer')).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('#target > .ori-source-layer')).toHaveCSS('visibility', 'hidden');
+  await expect(page.locator('#target > .ori-source-layer')).toHaveCSS('pointer-events', 'none');
   const snapshotBackground = await page.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
   expect(decodeURIComponent(snapshotBackground)).toContain('>Save<');
   expect(decodeURIComponent(snapshotBackground)).toContain('>Aoi<');
@@ -68,6 +68,28 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
 
   await expect(page.locator('#foldStage')).not.toHaveAttribute('data-center-angle', '0');
   await expect(page.locator('#angleValue')).not.toHaveText('0°');
+});
+
+test('live mirror spike renders visual clones and syncs folded hover state', async ({ page }) => {
+  await page.goto('/demo/');
+  await waitForIntro(page);
+
+  const live = page.locator('#liveMirrorTarget');
+  await expect(live).toHaveAttribute('data-live-mirror-ready', 'true');
+  await expect(live.locator('.ori-live-mirror')).toHaveCount(3);
+  await expect(live.locator('#liveMirrorButton')).toHaveCount(1);
+  await expect(live.locator('[data-fold-original-id="liveMirrorButton"]')).toHaveCount(3);
+  await expect(live.locator('.ori-live-mirror').first()).toHaveCSS('pointer-events', 'none');
+
+  const box = await live.boundingBox();
+  expect(box).not.toBeNull();
+  await live.scrollIntoViewIfNeeded();
+  const visibleBox = await live.boundingBox();
+  expect(visibleBox).not.toBeNull();
+  await page.mouse.move(visibleBox!.x + 210, visibleBox!.y + 74);
+  await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveAttribute('data-fold-original-id', 'liveMirrorButton');
+  await expect(live.locator('.ori-live-mirror [data-fold-hover="true"]').first()).toHaveCSS('background-color', 'rgb(182, 95, 69)');
+  await expect(live.locator('.ori-live-mirror .live-shine').first()).toHaveCSS('animation-name', 'live-shine');
 });
 
 test('example snippets are rendered as folded code surfaces', async ({ page }) => {

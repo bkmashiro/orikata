@@ -12,8 +12,9 @@ const angleValue = document.querySelector<HTMLElement>('#angleValue');
 const angleDial = document.querySelector<HTMLElement>('#angleDial');
 const angleHand = document.querySelector<HTMLElement>('#angleHand');
 const creaseTools = document.querySelector<HTMLElement>('#creaseTools');
+const liveMirrorTarget = document.querySelector<HTMLElement>('#liveMirrorTarget');
 
-if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools) {
+if (!target || !button || !saveBtn || !nameInput || !copyInstall || !installCommand || !foldStage || !activeFoldName || !angleValue || !angleDial || !angleHand || !creaseTools || !liveMirrorTarget) {
   throw new Error('Demo DOM is missing required elements');
 }
 
@@ -23,6 +24,7 @@ const angleValueElement = angleValue;
 const angleDialElement = angleDial;
 const angleHandElement = angleHand;
 const creaseToolHost = creaseTools;
+const liveMirrorTargetElement = liveMirrorTarget;
 const targetElement = target;
 const saveButtonElement = saveBtn;
 const nameInputElement = nameInput;
@@ -305,6 +307,39 @@ function buildCodeSnapshotSvg(code: string): string {
 </svg>`;
 }
 
+async function mountLiveMirrorSpike(): Promise<void> {
+  const sourceRoot = liveMirrorTargetElement.querySelector<HTMLElement>('.live-card-source');
+  if (!sourceRoot) return;
+  const liveRuntime = createOrigamiRuntime({
+    mode: 'interactive-bridge',
+    host: liveMirrorTargetElement,
+    sourceRoot,
+    paper: { width: 300, height: 144 },
+    foldOps: [
+      {
+        id: 'live-center-fold',
+        targetNodeId: ROOT_ID,
+        childNodeId: 'live-right-panel',
+        line: { a: { x: 150, y: 0 }, b: { x: 150, y: 144 } },
+        movingSide: 1,
+        angleDeg: -20
+      },
+      {
+        id: 'live-corner-fold',
+        targetNodeId: 'live-right-panel',
+        childNodeId: 'live-corner-flap',
+        line: { a: { x: 220, y: 0 }, b: { x: 300, y: 50 } },
+        movingSide: 1,
+        angleDeg: 26
+      }
+    ],
+    snapshotProvider: new StaticImageSnapshotProvider({ id: 'live-mirror-unused-snapshot', width: 300, height: 144, url: '' }),
+    visual: { backend: 'live-mirror', pseudoStates: { hover: true, active: true } }
+  });
+  await liveRuntime.mount();
+  liveMirrorTargetElement.dataset.liveMirrorReady = 'true';
+}
+
 async function mountFoldedCodeExamples(): Promise<void> {
   const blocks = Array.from(document.querySelectorAll<HTMLElement>('[data-code-fold]'));
   await Promise.all(blocks.map(async (host, index) => {
@@ -356,6 +391,7 @@ const runtime = createOrigamiRuntime({
 let folded = true;
 await runtime.mount();
 setSnapshotInputValue(nameInputElement.value);
+await mountLiveMirrorSpike();
 await mountFoldedCodeExamples();
 startIntroAnimation();
 

@@ -32,9 +32,11 @@ Orikata separates real interaction from visual rendering. The source DOM stays u
 
 Current default. Capture or provide one source snapshot, then split that texture by folded face polygons. This is the KISS path and handles controls crossed by folds correctly at the visual level, because the whole paper texture is cut into pieces. Fold/open animations update face transforms only; content changes such as `Save -> Saved` or input values should refresh/rebuild the snapshot, optionally crossfading two snapshot layers.
 
-### `dom-clone-clip` renderer
+### `live-mirror` / `dom-clone-clip` renderer
 
-Planned advanced renderer. For each folded face, create a visual-only clone of the source DOM, clip it to that face polygon, and apply the face transform. This preserves more DOM/CSS appearance and animation, while still keeping pointer events and real state on the single source DOM. Clones must remain visual-only; they are not independent interactive controls.
+Experimental. For each folded face, Orikata can create a visual-only clone of the source DOM, clip it to that face polygon, and apply the face transform via `visual: { backend: 'live-mirror' }` on `interactive-bridge`. This preserves CSS keyframes/transitions and lets pseudo states be mirrored with `data-fold-hover` / `data-fold-active`, while still keeping pointer events and real state on the single source DOM. Clones remain `pointer-events: none`; they are not independent interactive controls.
+
+Current scope is a spike: full source clone per face, duplicate `id` sanitization, basic form value mirroring, and hover/active pseudo-state sync. Large DOMs or many folds should eventually use a hybrid live-islands renderer instead of full-tree clones.
 
 Avoid attaching a whole input/button overlay to one chosen facet. Elements live in source paper coordinates; if a fold line crosses them, their visual representation must be fragmented by face.
 

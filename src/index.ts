@@ -158,6 +158,16 @@ export interface StaticViewRuntimeOptions {
   camera?: Partial<CameraSpec>;
 }
 
+export interface InteractiveVisualOptions {
+  backend?: 'snapshot' | 'live-mirror';
+  pseudoStates?: {
+    hover?: boolean;
+    active?: boolean;
+    focus?: boolean;
+    focusVisible?: boolean;
+  };
+}
+
 export interface InteractiveRuntimeOptions {
   mode: 'interactive-bridge';
   host: HTMLElement;
@@ -166,6 +176,7 @@ export interface InteractiveRuntimeOptions {
   foldOps?: FoldOp[];
   snapshotProvider: SnapshotProvider;
   adapters?: InteractionAdapter[];
+  visual?: InteractiveVisualOptions;
   camera?: Partial<CameraSpec>;
 }
 
@@ -586,6 +597,189 @@ class FoldVisualRenderer {
   }
 }
 
+export class FoldElementKeyRegistry {
+  private nextId = 1;
+  private readonly keyByElement = new WeakMap<Element, string>();
+
+  assign(root: HTMLElement): void {
+    this.ensureKey(root);
+    const elements = root.querySelectorAll<HTMLElement>('*');
+    for (const element of elements) this.ensureKey(element);
+  }
+
+  ensureKey(element: HTMLElement): string {
+    const existing = this.keyByElement.get(element) ?? element.dataset.foldKey;
+    if (existing) {
+      this.keyByElement.set(element, existing);
+      element.dataset.foldKey = existing;
+      return existing;
+    }
+    const key = `fold_el_${this.nextId++}`;
+    this.keyByElement.set(element, key);
+    element.dataset.foldKey = key;
+    return key;
+  }
+
+  getKey(element: HTMLElement): string | undefined {
+    return this.keyByElement.get(element) ?? element.dataset.foldKey;
+  }
+}
+
+interface MirrorFragmentDom {
+  fragmentEl: HTMLElement;
+  clipEl: HTMLElement;
+  mirrorRoot: HTMLElement;
+  keyToCloneEl: Map<string, HTMLElement>;
+}
+
+class LiveMirrorRenderer {
+  readonly rootElement: HTMLElement;
+  private readonly fragments = new Map<Id, MirrorFragmentDom>();
+
+  constructor(
+    rootElement: HTMLElement,
+    private readonly sourceRoot: HTMLElement,
+    private readonly keyRegistry: FoldElementKeyRegistry
+  ) {
+    this.rootElement = rootElement;
+  }
+
+  renderPieces(pieces: FoldVisualPiece[], paper: PaperSpec): void {
+    this.keyRegistry.assign(this.sourceRoot);
+    this.rootElement.style.position = 'relative';
+    this.rootElement.style.width = `${paper.width}px`;
+    this.rootElement.style.height = `${paper.height}px`;
+    this.rootElement.style.transformStyle = 'preserve-3d';
+
+    const seen = new Set<Id>();
+    for (const piece of pieces) {
+      seen.add(piece.nodeId);
+      const dom = this.ensureFragment(piece.nodeId);
+      dom.fragmentEl.dataset.oriNodeId = piece.nodeId;
+      dom.fragmentEl.style.transform = piece.transform;
+      dom.clipEl.style.clipPath = piece.clipPath;
+      this.rootElement.appendChild(dom.fragmentEl);
+    }
+
+    for (const [id, dom] of this.fragments) {
+      if (!seen.has(id)) {
+        dom.fragmentEl.remove();
+        this.fragments.delete(id);
+      }
+    }
+  }
+
+  syncSourceMutation(): void {
+    for (const [id, dom] of this.fragments) {
+      const mirror = this.createMirrorRoot();
+      dom.mirrorRoot.replaceWith(mirror.root);
+      dom.mirrorRoot = mirror.root;
+      dom.keyToCloneEl = mirror.map;
+      this.fragments.set(id, dom);
+    }
+  }
+
+  setPseudoState(params: { key?: string; hover?: boolean; active?: boolean; focus?: boolean; focusVisible?: boolean }): void {
+    for (const dom of this.fragments.values()) {
+      for (const element of dom.keyToCloneEl.values()) {
+        if (params.hover !== undefined) delete element.dataset.foldHover;
+        if (params.active !== undefined) delete element.dataset.foldActive;
+        if (params.focus !== undefined) delete element.dataset.foldFocus;
+        if (params.focusVisible !== undefined) delete element.dataset.foldFocusVisible;
+      }
+
+      if (!params.key) continue;
+      const clone = dom.keyToCloneEl.get(params.key);
+      if (!clone) continue;
+      if (params.hover) clone.dataset.foldHover = 'true';
+      if (params.active) clone.dataset.foldActive = 'true';
+      if (params.focus) clone.dataset.foldFocus = 'true';
+      if (params.focusVisible) clone.dataset.foldFocusVisible = 'true';
+    }
+  }
+
+  mirrorFormValues(): void {
+    const controls = this.sourceRoot.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select');
+    for (const sourceControl of controls) {
+      const key = this.keyRegistry.getKey(sourceControl);
+      if (!key) continue;
+      for (const dom of this.fragments.values()) {
+        const clone = dom.keyToCloneEl.get(key);
+        if (clone instanceof HTMLInputElement && sourceControl instanceof HTMLInputElement) {
+          clone.value = sourceControl.value;
+          clone.checked = sourceControl.checked;
+        } else if (clone instanceof HTMLTextAreaElement && sourceControl instanceof HTMLTextAreaElement) {
+          clone.value = sourceControl.value;
+        } else if (clone instanceof HTMLSelectElement && sourceControl instanceof HTMLSelectElement) {
+          clone.selectedIndex = sourceControl.selectedIndex;
+        }
+      }
+    }
+  }
+
+  private ensureFragment(id: Id): MirrorFragmentDom {
+    const existing = this.fragments.get(id);
+    if (existing) return existing;
+
+    const fragmentEl = document.createElement('div');
+    fragmentEl.className = 'ori-live-fragment ori-fold-node';
+    fragmentEl.style.position = 'absolute';
+    fragmentEl.style.inset = '0';
+    fragmentEl.style.transformOrigin = '0 0';
+    fragmentEl.style.transformStyle = 'preserve-3d';
+    fragmentEl.style.pointerEvents = 'none';
+    fragmentEl.style.overflow = 'visible';
+
+    const clipEl = document.createElement('div');
+    clipEl.className = 'ori-live-clip';
+    clipEl.style.position = 'absolute';
+    clipEl.style.inset = '0';
+    clipEl.style.pointerEvents = 'none';
+    clipEl.style.backfaceVisibility = 'visible';
+
+    const mirror = this.createMirrorRoot();
+    clipEl.appendChild(mirror.root);
+    fragmentEl.appendChild(clipEl);
+
+    const dom = { fragmentEl, clipEl, mirrorRoot: mirror.root, keyToCloneEl: mirror.map };
+    this.fragments.set(id, dom);
+    return dom;
+  }
+
+  private createMirrorRoot(): { root: HTMLElement; map: Map<string, HTMLElement> } {
+    const clone = this.sourceRoot.cloneNode(true) as HTMLElement;
+    clone.classList.add('ori-live-mirror');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.setAttribute('inert', '');
+    clone.style.pointerEvents = 'none';
+    clone.style.userSelect = 'none';
+    sanitizeDuplicateIds(clone);
+    return { root: clone, map: buildCloneElementMap(clone) };
+  }
+}
+
+function buildCloneElementMap(root: HTMLElement): Map<string, HTMLElement> {
+  const map = new Map<string, HTMLElement>();
+  const key = root.dataset.foldKey;
+  if (key) map.set(key, root);
+  for (const element of root.querySelectorAll<HTMLElement>('[data-fold-key]')) {
+    const elementKey = element.dataset.foldKey;
+    if (elementKey) map.set(elementKey, element);
+  }
+  return map;
+}
+
+function sanitizeDuplicateIds(root: HTMLElement): void {
+  if (root.id) {
+    root.dataset.foldOriginalId = root.id;
+    root.removeAttribute('id');
+  }
+  for (const element of root.querySelectorAll<HTMLElement>('[id]')) {
+    element.dataset.foldOriginalId = element.id;
+    element.removeAttribute('id');
+  }
+}
+
 class SourceSurface {
   constructor(readonly sourceRoot: HTMLElement) {}
 
@@ -804,7 +998,8 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   private readonly state: OrigamiDocumentState;
   private tree: DerivedFoldTree;
   private readonly source: SourceSurface;
-  private readonly renderer: FoldVisualRenderer;
+  private readonly renderer: FoldVisualRenderer | LiveMirrorRenderer;
+  private readonly keyRegistry = new FoldElementKeyRegistry();
   private readonly adapters: InteractionAdapter[];
   private readonly interactionLayer: HTMLElement;
   private snapshot: Snapshot | null = null;
@@ -821,7 +1016,10 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     this.source = new SourceSurface(options.sourceRoot);
     setupHost(options.host, 'interactive-bridge', this.state.camera);
     ensureLayer(options.host, 'ori-source-layer').appendChild(options.sourceRoot);
-    this.renderer = new FoldVisualRenderer(ensureLayer(options.host, 'ori-visual-layer'));
+    const visualLayer = ensureLayer(options.host, 'ori-visual-layer');
+    this.renderer = options.visual?.backend === 'live-mirror'
+      ? new LiveMirrorRenderer(visualLayer, options.sourceRoot, this.keyRegistry)
+      : new FoldVisualRenderer(visualLayer);
     this.interactionLayer = ensureLayer(options.host, 'ori-interaction-layer');
     ensureLayer(options.host, 'ori-activation-layer');
   }
@@ -837,7 +1035,7 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
 
   async mount(): Promise<void> {
     this.snapshot = await this.options.snapshotProvider.capture(this.options.sourceRoot, this.state.paper);
-    this.renderer.setSnapshot(this.snapshot);
+    if (this.renderer instanceof FoldVisualRenderer) this.renderer.setSnapshot(this.snapshot);
     this.render();
     this.interactionLayer.addEventListener('pointerdown', this.onLayerPointer);
     this.interactionLayer.addEventListener('pointermove', this.onLayerPointer);
@@ -845,8 +1043,9 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   }
 
   render(): void {
-    if (!this.snapshot) return;
+    if (!this.snapshot && this.renderer instanceof FoldVisualRenderer) return;
     this.renderer.renderPieces(piecesFromTree(this.tree, this.state.paper), this.state.paper, false);
+    if (this.renderer instanceof LiveMirrorRenderer) this.renderer.mirrorFormValues();
   }
 
   setAngle(opId: Id, angleDeg: number): boolean {
@@ -876,6 +1075,8 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
       elementId: target.dataset.oriElementId
     };
 
+    this.syncLivePseudoState(event.type, target);
+
     const method = event.type === 'pointerdown'
       ? 'pointerDown'
       : event.type === 'pointermove'
@@ -893,6 +1094,16 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
 
     dispatchSyntheticEvent(target, event.type);
     return true;
+  }
+
+  private syncLivePseudoState(type: string, target: HTMLElement): void {
+    if (!(this.renderer instanceof LiveMirrorRenderer)) return;
+    const pseudo = this.options.visual?.pseudoStates;
+    if (!pseudo) return;
+    const key = this.keyRegistry.ensureKey(target);
+    if (type === 'pointermove' && pseudo.hover) this.renderer.setPseudoState({ key, hover: true });
+    if (type === 'pointerdown' && pseudo.active) this.renderer.setPseudoState({ key, active: true });
+    if ((type === 'pointerup' || type === 'click') && pseudo.active) this.renderer.setPseudoState({ active: false });
   }
 
   dispose(): void {

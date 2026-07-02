@@ -186,6 +186,46 @@ describe('interactive-bridge runtime', () => {
     expect(events).toEqual(['pointerdown']);
   });
 
+  it('renders live mirror clones as visual-only folded fragments and syncs hover pseudo-state', async () => {
+    const host = document.createElement('div');
+    const sourceRoot = document.createElement('div');
+    sourceRoot.id = 'source-card';
+    const button = document.createElement('button');
+    button.id = 'saveBtn';
+    button.textContent = 'Save';
+    button.style.position = 'absolute';
+    button.style.left = '130px';
+    button.style.top = '40px';
+    button.style.width = '50px';
+    button.style.height = '20px';
+    sourceRoot.appendChild(button);
+
+    const runtime = createOrigamiRuntime({
+      mode: 'interactive-bridge',
+      host,
+      sourceRoot,
+      paper,
+      foldOps,
+      snapshotProvider: new StaticImageSnapshotProvider(snapshot),
+      visual: { backend: 'live-mirror', pseudoStates: { hover: true, active: true } }
+    });
+
+    await runtime.mount();
+
+    const mirrors = host.querySelectorAll<HTMLElement>('.ori-live-mirror');
+    expect(mirrors).toHaveLength(2);
+    expect(host.querySelectorAll('[data-fold-original-id="saveBtn"]')).toHaveLength(2);
+    expect(host.querySelectorAll('#saveBtn')).toHaveLength(1);
+    expect(host.querySelector<HTMLElement>('.ori-live-mirror')?.style.pointerEvents).toBe('none');
+    expect(host.querySelector<HTMLElement>('.ori-live-clip')?.style.clipPath).toContain('polygon(');
+    expect(host.querySelector<HTMLElement>('.ori-live-fragment')?.style.transform).toContain('matrix3d(');
+
+    expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointermove' })).toBe(true);
+    const hoveredClones = host.querySelectorAll<HTMLElement>('.ori-live-mirror [data-fold-hover="true"]');
+    expect(hoveredClones).toHaveLength(2);
+    expect(hoveredClones[0].dataset.foldOriginalId).toBe('saveBtn');
+  });
+
   it('creates a text input proxy and syncs input back to source', async () => {
     const host = document.createElement('div');
     const sourceRoot = document.createElement('div');
