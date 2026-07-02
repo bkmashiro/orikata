@@ -18,6 +18,11 @@ test('install command copies and folded demo bridges button feedback and text in
   await expect(page.locator('#clickCount')).toHaveCount(0);
   await expect(page.locator('#sourceValue')).toHaveCount(0);
   await expect(page.locator('#saveFeedback')).toHaveCount(0);
+  await expect(page.locator('.ori-source-layer')).toHaveCSS('visibility', 'hidden');
+  await expect(page.locator('.ori-source-layer')).toHaveCSS('pointer-events', 'none');
+  const snapshotBackground = await page.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
+  expect(decodeURIComponent(snapshotBackground)).not.toContain('>Save<');
+  expect(decodeURIComponent(snapshotBackground)).not.toContain('>Aoi<');
 
   const initialFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
   await page.mouse.click(target!.x + 290, target!.y + 150);

@@ -256,10 +256,6 @@ const snapshotSvg = `
     <text x="32" y="58" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="28" fill="#1f2420">Washi form</text>
     <text x="34" y="91" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">one real DOM</text>
     <text x="34" y="111" font-family="system-ui, sans-serif" font-size="13" fill="#5f5a51">folded like paper</text>
-    <rect x="270" y="82" width="100" height="30" fill="rgba(255,255,255,.72)" stroke="#1f2420" stroke-opacity=".28"/>
-    <text x="282" y="102" font-family="system-ui, sans-serif" font-size="13" fill="#1f2420">Aoi</text>
-    <rect x="270" y="132" width="100" height="36" fill="#2b2f2a"/>
-    <text x="320" y="155" text-anchor="middle" font-family="Hiragino Mincho ProN, Yu Mincho, Georgia, serif" font-size="13" fill="#f7f1e4">Save</text>
     <circle cx="385" cy="32" r="18" fill="#b65f45" fill-opacity="0.18"/>
   </g>
 </svg>`;
