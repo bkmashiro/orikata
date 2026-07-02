@@ -123,6 +123,31 @@ export interface FoldHit {
   localPoint: Point2;
 }
 
+export interface MappedEventTarget {
+  originalEvent: { clientX: number; clientY: number; type: string };
+  hit: FoldHit;
+  sourcePoint: Point2;
+  sourceTarget: HTMLElement;
+  elementId?: Id;
+}
+
+export interface ActivePointerState {
+  pointerId: number;
+  sourceTarget: HTMLElement;
+  nodeId: Id;
+  startLocal: Point2;
+  lastLocal: Point2;
+  buttons: number;
+}
+
+export interface InteractionAdapter {
+  name: string;
+  match(el: HTMLElement): boolean;
+  pointerDown?(ctx: MappedEventTarget): boolean;
+  pointerMove?(ctx: MappedEventTarget, active?: ActivePointerState): boolean;
+  pointerUp?(ctx: MappedEventTarget, active?: ActivePointerState): boolean;
+}
+
 export interface StaticViewRuntimeOptions {
   mode: 'static-view';
   host: HTMLElement;
@@ -139,6 +164,7 @@ export interface InteractiveRuntimeOptions {
   paper: PaperSpec;
   foldOps?: FoldOp[];
   snapshotProvider: SnapshotProvider;
+  adapters?: InteractionAdapter[];
   camera?: Partial<CameraSpec>;
 }
 
@@ -578,6 +604,61 @@ export class StaticImageSnapshotProvider implements SnapshotProvider {
   }
 }
 
+export class ButtonAdapter implements InteractionAdapter {
+  name = 'ButtonAdapter';
+
+  match(el: HTMLElement): boolean {
+    return el instanceof HTMLButtonElement
+      || (el instanceof HTMLInputElement && ['button', 'submit', 'checkbox', 'radio'].includes(el.type));
+  }
+
+  pointerUp(ctx: MappedEventTarget): boolean {
+    ctx.sourceTarget.click();
+    return true;
+  }
+}
+
+export class AnchorAdapter implements InteractionAdapter {
+  name = 'AnchorAdapter';
+
+  match(el: HTMLElement): boolean {
+    return el instanceof HTMLAnchorElement;
+  }
+
+  pointerUp(ctx: MappedEventTarget): boolean {
+    ctx.sourceTarget.click();
+    return true;
+  }
+}
+
+export class PointerSyntheticAdapter implements InteractionAdapter {
+  name = 'PointerSyntheticAdapter';
+
+  match(): boolean {
+    return true;
+  }
+
+  pointerDown(ctx: MappedEventTarget): boolean {
+    dispatchSyntheticEvent(ctx.sourceTarget, 'pointerdown');
+    return true;
+  }
+
+  pointerMove(ctx: MappedEventTarget): boolean {
+    dispatchSyntheticEvent(ctx.sourceTarget, 'pointermove');
+    return true;
+  }
+
+  pointerUp(ctx: MappedEventTarget): boolean {
+    dispatchSyntheticEvent(ctx.sourceTarget, 'pointerup');
+    return true;
+  }
+}
+
+function dispatchSyntheticEvent(target: HTMLElement, type: string): void {
+  const EventCtor = typeof PointerEvent === 'function' ? PointerEvent : Event;
+  target.dispatchEvent(new EventCtor(type, { bubbles: true }));
+}
+
 class StaticOrigamiView implements OrigamiRuntime {
   readonly mode = 'static-view';
   private state: OrigamiDocumentState;
@@ -653,6 +734,7 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
   private tree: DerivedFoldTree;
   private readonly source: SourceSurface;
   private readonly renderer: FoldVisualRenderer;
+  private readonly adapters: InteractionAdapter[];
   private snapshot: Snapshot | null = null;
 
   constructor(private readonly options: InteractiveRuntimeOptions) {
@@ -663,6 +745,7 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
       controls: {}
     };
     this.tree = buildDerivedFoldTree(this.state);
+    this.adapters = [...(options.adapters ?? []), new ButtonAdapter(), new AnchorAdapter()];
     this.source = new SourceSurface(options.sourceRoot);
     setupHost(options.host, 'interactive-bridge', this.state.camera);
     ensureLayer(options.host, 'ori-source-layer').appendChild(options.sourceRoot);
@@ -700,11 +783,31 @@ class InteractiveOrigamiRuntime implements OrigamiRuntime {
     if (!hit) return false;
     const target = this.source.elementFromLocalPoint(hit.localPoint);
     if (!target) return false;
-    if (event.type === 'pointerup' || event.type === 'click') {
-      target.click();
-      return true;
+
+    const ctx: MappedEventTarget = {
+      originalEvent: event,
+      hit,
+      sourcePoint: hit.localPoint,
+      sourceTarget: target,
+      elementId: target.dataset.oriElementId
+    };
+
+    const method = event.type === 'pointerdown'
+      ? 'pointerDown'
+      : event.type === 'pointermove'
+        ? 'pointerMove'
+        : event.type === 'pointerup' || event.type === 'click'
+          ? 'pointerUp'
+          : undefined;
+
+    if (method) {
+      for (const adapter of this.adapters) {
+        const handler = adapter[method];
+        if (adapter.match(target) && handler?.call(adapter, ctx)) return true;
+      }
     }
-    target.dispatchEvent(new Event(event.type, { bubbles: true }));
+
+    dispatchSyntheticEvent(target, event.type);
     return true;
   }
 

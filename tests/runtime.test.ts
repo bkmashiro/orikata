@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   ROOT_ID,
+  PointerSyntheticAdapter,
   StaticImageSnapshotProvider,
   buildBakedOrigamiManifest,
   buildDerivedFoldTree,
@@ -113,6 +114,75 @@ describe('interactive-bridge runtime', () => {
     expect(capture).toHaveBeenCalledTimes(1);
     expect(clicks).toBe(1);
     expect(host.dataset.oriMode).toBe('interactive-bridge');
+  });
+
+  it('lets custom adapters intercept mapped targets before defaults', async () => {
+    const host = document.createElement('div');
+    const sourceRoot = document.createElement('div');
+    const button = document.createElement('button');
+    button.style.position = 'absolute';
+    button.style.left = '130px';
+    button.style.top = '40px';
+    button.style.width = '50px';
+    button.style.height = '20px';
+    sourceRoot.appendChild(button);
+
+    let clicks = 0;
+    button.addEventListener('click', () => clicks += 1);
+    const handled: string[] = [];
+
+    const runtime = createOrigamiRuntime({
+      mode: 'interactive-bridge',
+      host,
+      sourceRoot,
+      paper,
+      foldOps,
+      snapshotProvider: new StaticImageSnapshotProvider(snapshot),
+      adapters: [{
+        name: 'test-adapter',
+        match: (el) => el === button,
+        pointerUp: (ctx) => {
+          handled.push(ctx.sourceTarget.tagName);
+          return true;
+        }
+      }]
+    });
+
+    await runtime.mount();
+    expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointerup' })).toBe(true);
+
+    expect(handled).toEqual(['BUTTON']);
+    expect(clicks).toBe(0);
+  });
+
+  it('dispatches pointer events through PointerSyntheticAdapter', async () => {
+    const host = document.createElement('div');
+    const sourceRoot = document.createElement('div');
+    const drag = document.createElement('div');
+    drag.style.position = 'absolute';
+    drag.style.left = '130px';
+    drag.style.top = '40px';
+    drag.style.width = '50px';
+    drag.style.height = '20px';
+    sourceRoot.appendChild(drag);
+
+    const events: string[] = [];
+    drag.addEventListener('pointerdown', () => events.push('pointerdown'));
+
+    const runtime = createOrigamiRuntime({
+      mode: 'interactive-bridge',
+      host,
+      sourceRoot,
+      paper,
+      foldOps,
+      snapshotProvider: new StaticImageSnapshotProvider(snapshot),
+      adapters: [new PointerSyntheticAdapter()]
+    });
+
+    await runtime.mount();
+    expect(runtime.bridgePointer?.({ clientX: 125, clientY: 50, type: 'pointerdown' })).toBe(true);
+
+    expect(events).toEqual(['pointerdown']);
   });
 });
 
