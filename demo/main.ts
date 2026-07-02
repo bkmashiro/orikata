@@ -62,19 +62,12 @@ targetElement.addEventListener('focusout', (event) => {
 let feedbackTimer: number | undefined;
 saveButtonElement.addEventListener('click', () => {
   window.clearTimeout(feedbackTimer);
-  const baseAngle = foldAngles['corner-mountain'];
   saveButtonElement.textContent = 'Saved';
-  stageElement.dataset.feedback = 'saved';
   refreshSnapshotTexture();
-  runtime?.setAngle('corner-mountain', Math.min(72, baseAngle + 10));
-  renderCreaseTools();
 
   feedbackTimer = window.setTimeout(() => {
     saveButtonElement.textContent = 'Save';
     refreshSnapshotTexture();
-    runtime?.setAngle('corner-mountain', baseAngle);
-    renderCreaseTools();
-    delete stageElement.dataset.feedback;
   }, 620);
 });
 nameInputElement.addEventListener('input', () => {
@@ -285,6 +278,72 @@ function refreshSnapshotTexture(): void {
   runtime.setAngle('corner-mountain', foldAngles['corner-mountain']);
 }
 
+function buildCodeSnapshotSvg(code: string): string {
+  const lines = code.split('\n').slice(0, 8);
+  const rows = lines.map((line, index) => {
+    const y = 24 + index * 16;
+    return `<text x="16" y="${y}" font-family="SF Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#252922">${escapeSvgText(line)}</text>`;
+  }).join('');
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="248" height="148" viewBox="0 0 248 148">
+  <defs>
+    <pattern id="kozo" width="22" height="22" patternUnits="userSpaceOnUse">
+      <path d="M0 11h22M11 0v22" stroke="#2b2f2a" stroke-opacity="0.055" stroke-width="1"/>
+    </pattern>
+    <filter id="paperNoise" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.06" numOctaves="3" seed="11" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 0.1"/></feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="multiply"/>
+    </filter>
+  </defs>
+  <rect width="248" height="148" fill="#f3ead8"/>
+  <rect width="248" height="148" fill="url(#kozo)"/>
+  <path d="M124 0v148" stroke="#2b2f2a" stroke-opacity="0.16" stroke-dasharray="5 7"/>
+  <path d="M176 0 248 46" stroke="#b65f45" stroke-opacity="0.34" stroke-dasharray="4 6"/>
+  <g filter="url(#paperNoise)">${rows}</g>
+</svg>`;
+}
+
+async function mountFoldedCodeExamples(): Promise<void> {
+  const blocks = Array.from(document.querySelectorAll<HTMLElement>('[data-code-fold]'));
+  await Promise.all(blocks.map(async (host, index) => {
+    const source = host.querySelector<HTMLElement>('.code-fold-source');
+    const code = source?.textContent?.trim() || '';
+    const codeRuntime = createOrigamiRuntime({
+      mode: 'static-view',
+      host,
+      paper: { width: 248, height: 148 },
+      snapshot: {
+        id: `code-example-${index}`,
+        width: 248,
+        height: 148,
+        url: `data:image/svg+xml,${encodeURIComponent(buildCodeSnapshotSvg(code))}`
+      },
+      foldOps: [
+        {
+          id: 'code-center-fold',
+          targetNodeId: ROOT_ID,
+          childNodeId: 'code-right-panel',
+          line: { a: { x: 124, y: 0 }, b: { x: 124, y: 148 } },
+          movingSide: 1,
+          angleDeg: -16
+        },
+        {
+          id: 'code-corner-fold',
+          targetNodeId: 'code-right-panel',
+          childNodeId: 'code-corner-flap',
+          line: { a: { x: 176, y: 0 }, b: { x: 248, y: 46 } },
+          movingSide: 1,
+          angleDeg: 32
+        }
+      ]
+    });
+    await codeRuntime.mount();
+    host.dataset.rendered = 'true';
+  }));
+}
+
 const runtime = createOrigamiRuntime({
   mode: 'interactive-bridge',
   host: target,
@@ -297,6 +356,7 @@ const runtime = createOrigamiRuntime({
 let folded = true;
 await runtime.mount();
 setSnapshotInputValue(nameInputElement.value);
+await mountFoldedCodeExamples();
 startIntroAnimation();
 
 function startIntroAnimation(): void {

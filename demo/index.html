@@ -343,7 +343,7 @@
         text-align: left;
       }
       .example-card {
-        min-height: 178px;
+        min-height: 246px;
         padding: 18px;
         border: 1px solid var(--line);
         background: rgba(255,255,255,.22);
@@ -360,13 +360,34 @@
         font-size: 13px;
         line-height: 1.7;
       }
-      .example-card pre {
+      .code-fold {
+        position: relative;
+        width: 248px;
+        height: 148px;
+        margin: 4px auto 0;
+        perspective: 720px;
+      }
+      .code-fold-source {
+        position: absolute;
+        inset: 0;
         margin: 0;
-        white-space: pre-wrap;
+        padding: 16px 14px;
+        overflow: hidden;
         color: var(--sumi);
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 11px;
-        line-height: 1.55;
+        background: rgba(247,241,228,.78);
+        border: 1px solid rgba(31,36,32,.14);
+        white-space: pre-wrap;
+        font-family: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+        font-size: 10.8px;
+        line-height: 1.5;
+        font-variant-ligatures: none;
+      }
+      .code-fold .ori-visual-layer { z-index: 1; }
+      .code-fold[data-rendered="true"] .code-fold-source {
+        visibility: hidden;
+      }
+      .code-fold .ori-fold-paint {
+        box-shadow: 0 12px 32px rgba(49,42,32,.11);
       }
       .caption {
         max-width: 580px;
@@ -465,31 +486,37 @@
           <section class="examples" aria-label="Orikata examples">
             <article class="example-card">
               <h3>Static view</h3>
-              <p>Use fixed geometry as a decorative folded surface.</p>
-              <pre><code>createOrigamiRuntime({
+              <p>The code itself is rendered as a folded Orikata surface.</p>
+              <div class="code-fold" data-code-fold aria-label="Folded static-view code example">
+                <pre class="code-fold-source"><code>createOrigamiRuntime({
   mode: 'static-view',
   host, paper, foldOps,
   snapshot
 });</code></pre>
+              </div>
             </article>
             <article class="example-card">
               <h3>Interactive bridge</h3>
-              <p>Keep one real DOM tree; map folded clicks back to source controls.</p>
-              <pre><code>createOrigamiRuntime({
+              <p>One source DOM; folded clicks map back to real controls.</p>
+              <div class="code-fold" data-code-fold aria-label="Folded interactive-bridge code example">
+                <pre class="code-fold-source"><code>createOrigamiRuntime({
   mode: 'interactive-bridge',
   host, sourceRoot,
   snapshotProvider
 });</code></pre>
+              </div>
             </article>
             <article class="example-card">
               <h3>Baked view</h3>
-              <p>Precompute pieces when angles are known and render cheaply.</p>
-              <pre><code>const manifest =
+              <p>Precompute the folded pieces and mount them cheaply.</p>
+              <div class="code-fold" data-code-fold aria-label="Folded baked-view code example">
+                <pre class="code-fold-source"><code>const manifest =
   buildBakedOrigamiManifest(doc);
 createOrigamiRuntime({
   mode: 'baked-view',
   host, manifest
 });</code></pre>
+              </div>
             </article>
           </section>
 

@@ -29,7 +29,7 @@ test('install command copies and folded demo bridges button feedback and text in
   await page.mouse.click(target!.x + 290, target!.y + 150);
   await expect.poll(async () => decodeURIComponent(await page.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage))).toContain('>Saved<');
   const feedbackFlapTransform = await page.locator('[data-ori-node-id="upper-corner-flap"]').evaluate((node) => getComputedStyle(node).transform);
-  expect(feedbackFlapTransform).not.toBe(initialFlapTransform);
+  expect(feedbackFlapTransform).toBe(initialFlapTransform);
 
   await page.mouse.click(target!.x + 290, target!.y + 97);
   const proxy = page.locator('.ori-input-proxy');
@@ -68,6 +68,20 @@ test('fold tooling highlights candidate lines and edits the selected angle with 
 
   await expect(page.locator('#foldStage')).not.toHaveAttribute('data-center-angle', '0');
   await expect(page.locator('#angleValue')).not.toHaveText('0°');
+});
+
+test('example snippets are rendered as folded code surfaces', async ({ page }) => {
+  await page.goto('/demo/');
+  await waitForIntro(page);
+
+  await expect(page.locator('[data-code-fold]')).toHaveCount(3);
+  await expect(page.locator('[data-code-fold][data-rendered="true"]')).toHaveCount(3);
+  const firstFold = page.locator('[data-code-fold]').first();
+  await expect(firstFold.locator('[data-ori-node-id="code-right-panel"]')).toBeAttached();
+  await expect(firstFold.locator('[data-ori-node-id="code-corner-flap"]')).toBeAttached();
+  await expect(firstFold.locator('.code-fold-source')).toHaveCSS('font-family', /SF Mono|SFMono-Regular|ui-monospace/);
+  const foldedCodeTexture = await firstFold.locator('.ori-fold-paint').first().evaluate((node) => (node as HTMLElement).style.backgroundImage);
+  expect(decodeURIComponent(foldedCodeTexture)).toContain("mode: 'static-view'");
 });
 
 test('crease guides are attached to folded facets instead of a flat global overlay', async ({ page }) => {
