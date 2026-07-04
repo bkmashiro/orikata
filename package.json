@@ -48,5 +48,6 @@
     "3d",
     "animation",
     "vite"
-  ]
+  ],
+  "packageManager": "pnpm@10.30.3"
 }
